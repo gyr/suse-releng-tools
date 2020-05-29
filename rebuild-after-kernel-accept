@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+
+PACKAGES="kernel-source kernel-debug kernel-default kernel-docs kernel-kvmsmall kernel-obs-build kernel-obs-qa kernel-preempt kernel-syms kernel-zfcpdump 000product 000release-packages"
+PROJECT_STAGING="SUSE:SLE-15-SP2:GA:Staging"
+if [ $# -ne 1 ]; then
+    echo "Missing staging letter"
+    exit 1
+else
+    STAGING=$1
+fi
+
+for PACKAGE in ${PACKAGES}; do
+    echo ">>> ${PACKAGE}"
+    osc -A https://api.suse.de rebuildpac ${PROJECT_STAGING}:${STAGING} ${PACKAGE}
+done
+echo ">>> images repo"
+osc -A https://api.suse.de rebuildpac ${PROJECT_STAGING}:${STAGING} -r images

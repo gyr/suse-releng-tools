@@ -1,0 +1,10 @@
+#!/usr/bin/env sh 
+
+STAGING_LIST='A B C D E F G H S V Y'
+IOSC='osc -A https://api.suse.de/ '
+PROJECT='SUSE:SLE-15-SP2:GA'
+
+for i in ${STAGING_LIST}; do
+    ${IOSC} staging freeze -p ${PROJECT} ${i}
+done
+${IOSC} staging frozenage -p ${PROJECT}

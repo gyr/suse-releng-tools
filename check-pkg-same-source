@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+
+TEMP_DIR=$(mktemp -d)
+
+cd ${TEMP_DIR}
+
+osc -A https://api.suse.de/ ls SUSE:SLE-15-SP2:GA | while read pkg; do osc -A https://api.suse.de/ rdiff SUSE:SLE-15-SP1:Update $pkg SUSE:SLE-15-SP2:GA > $pkg; done
+
+find . -size 0c
+
+cd -

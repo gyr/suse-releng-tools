@@ -1,0 +1,62 @@
+#!/usr/bin/env sh
+
+CURRENT_CODESTREAM="SUSE:SLE-15-SP2:GA"
+OLD_CODESTREAM="SUSE:SLE-15:GA"
+PACKAGE_NAME=
+BINARY_PATTERN=
+PACKAGEGROUPS_DIR="${HOME}/ibs/home:gyribeiro:branches:SUSE:SLE-15-SP2:GA/000package-groups"
+CURRENT_CODESTREAM_BINARIES="/tmp/binaries-source-codestream.cache"
+
+while getopts "c:o:p:b:d:r" opt; do
+    case $opt in
+        c)
+            CURRENT_CODESTREAM=SUSE:SLE-$OPTARG:GA
+            ;;
+        o)
+            OLD_CODESTREAM=SUSE:SLE-$OPTARG:GA
+            ;;
+        p)
+            PACKAGE_NAME=$OPTARG
+            ;;
+        b)
+            BINARY_PATTERN=$OPTARG
+            ;;
+        d)
+            PACKAGEGROUPS_DIR=$OPTARG
+            ;;
+        r)
+            osc -A https://api.suse.de ls ${CURRENT_CODESTREAM} -u -b > ${CURRENT_CODESTREAM_BINARIES}
+            ;;
+    esac
+done
+
+[ -z "PACKAGE_NAME" ] && exit 1
+
+# cache CURRENT_CODESTREAM_BINARIES
+if [ ! -f ${CURRENT_CODESTREAM_BINARIES} ]; then
+    osc -A https://api.suse.de ls ${CURRENT_CODESTREAM} -u -b > ${CURRENT_CODESTREAM_BINARIES}
+fi
+
+# get RPMs
+if [ -z ${BINARY_PATTERN} ]; then
+    RPMS=$(osc -A https://api.suse.de api -X GET "/build/${OLD_CODESTREAM}/standard/x86_64/${PACKAGE_NAME}" | cut -d'"' -f2|fzf -m)
+else
+    RPMS=$(osc -A https://api.suse.de api -X GET "/build/${OLD_CODESTREAM}/standard/x86_64/${PACKAGE_NAME}" | rg "filename=\"${BINARY_PATTERN}.*.rpm" | cut -d'"' -f2|fzf -m)
+fi
+
+cd ${PACKAGEGROUPS_DIR}
+
+for i in ${RPMS}; do
+    echo ">>> $i"
+
+    # get list of packages that requires the RPM
+    PACKAGE_LIST=$(osc -A https://api.suse.de api -X GET "/build/${OLD_CODESTREAM}/standard/x86_64/${PACKAGE_NAME}/${i}?view=fileinfo_ext" | rg requiredby | cut -d'"' -f2 | sort -u)
+
+    for j in ${PACKAGE_LIST}; do
+        # check if the package is in the media
+        if rg -q "(^|\s)$j($|\s)" {groups,reference-summary}.yml; then
+            # check if the package is in CURRENT_CODESTREAM
+            rg -q $j ${CURRENT_CODESTREAM_BINARIES} || echo $j
+        fi
+    done
+done

@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+################################################################################
+#
+# Author: Gustavo Yokoyama Ribeiro <gyr AT protonmail DOT ch>
+# File:  gyr-suse-box-update
+# Update: 20181018
+# (C) Copyright 2018 Gustavo Yokoyama Ribeiro
+# Licensed under CreativeCommons Attribution-ShareAlike 3.0 Unsupported
+# http://creativecommons.org/licenses/by-sa/3.0/ for more info.
+# Description: 
+# Usage: 
+#
+################################################################################
+
+
+#- refresh repo
+sudo zypper refresh
+
+# list updates
+sudo zypper list-updates
+
+# update packages
+#sudo zypper update
+sudo zypper dist-upgrade --no-allow-vendor-change
+
+# list services that need to be restarted after upgrade
+sudo zypper ps -s
+
+# remove package and its deps
+#sudo zypper rm --clean-deps <package_name>
+
+gyr-print -i "List unneeded packages"
+# list unneeded packages
+sudo zypper packages --unneeded
+
+gyr-print -i "List orphaned packages"
+# list orphaned packages (packages not installed directly via rpm file)
+sudo zypper packages --orphaned

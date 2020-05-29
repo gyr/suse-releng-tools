@@ -1,0 +1,41 @@
+#!/usr/bin/env sh
+################################################################################
+#
+# Author: Gustavo Yokoyama Ribeiro <gyr AT protonmail DOT ch>
+# File:  gyr-suse-openvpn-nue
+# Update: 20181017
+# (C) Copyright 2018 Gustavo Yokoyama Ribeiro
+# Licensed under CreativeCommons Attribution-ShareAlike 3.0 Unsupported
+# http://creativecommons.org/licenses/by-sa/3.0/ for more info.
+# Description: 
+# Usage: 
+#
+################################################################################
+
+SITE=$(basename $0 | cut -f4 -d '-' | tr a-z A-Z)
+case ${SITE} in
+    NUE|PRG|PRV)
+        VPN_STRING="openvpn@SUSE-${SITE}.service"
+        ;;
+    *)
+        echo "Invalid VPN site (${SITE})."
+        exit 1
+esac
+
+STATUS=($(systemctl show -p ActiveState -p SubState --value ${VPN_STRING}))
+IS_ACTIVE=${STATUS[0]}
+#IS_ACTIVE=$(systemctl is-active ${SERVICE})
+STATE=${STATUS[1]}
+
+CMD=start
+if [ "${IS_ACTIVE}" = 'active' ]; then
+    CMD=restart
+fi
+
+sudo systemctl ${CMD} ${VPN_STRING}
+
+# sudo openvpn --config /etc/openvpn/SUSE.conf.NUE
+# or
+#sudo systemctl start openvpn@SUSE-NUE.service
+# autostart
+# systemctl enable openvpn@SUSE-NUE.service

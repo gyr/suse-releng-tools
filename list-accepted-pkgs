@@ -1,0 +1,87 @@
+#!/usr/bin/env sh
+
+#while getopts ":p:d:" opt; do
+while getopts "p:d:" opt; do
+    case $opt in
+        p)
+            PROJECT=SUSE:SLE-$OPTARG:GA
+            ;;
+        d)
+            DAYS=$OPTARG
+            ;;
+        #\?)
+        #    echo "Invalid option: -$OPTARG" >&2
+        #    exit 1
+        #    ;;
+        #\:)
+        #    echo "Option -$OPTARG requires an argument." >&2
+        #    exit 1
+        #    ;;
+    esac
+done
+
+#date +"%F"
+if [ -z "${PROJECT}" ] ; then
+    echo "project not set"
+    exit 1
+fi
+
+echo
+echo "=============================="
+echo "SUBMIT REQUESTS"
+echo "=============================="
+
+osc -A https://api.suse.de/ request list -t submit -D ${DAYS:=1} -s accepted ${PROJECT} | \
+    grep -A 1 "^[0-9]" | \
+    sed \
+        -e '/^--$/d' \
+        -e '$!N;s/\n/ /' | \
+    grep "***make origin older***" | \
+    sed -e 's;^\([[:digit:]]*\)  .*When:\(.*[[:digit:]]\).*submit:.*\/\(.*\)@.*;\2@\3@https://build.suse.de/request/show/\1;' | \
+    sort | \
+    sed -e 's/^\(.*\)@\(.*\)@\(https.*\)/\2 (\1) \3/'
+ # filter request id and package name lines
+ # delete separators
+ # merge lines
+ # filter request to Project not from Project
+ # filter date, package name and create SR URL
+ # sort
+ # move package name to the beginning of the line
+
+#    grep -A 1 "^[0-9]" | \
+#    sed \
+#        -e 's/^[[:space:]].*\/\(.*\)@.*/\1/' \
+#        -e 's;^\([[:digit:]]*\)  .*When:\(.*\);\2 https://build.suse.de/request/show/\1;' \
+#        -e 's/^[[:space:]]*//' \
+#        -e '/^--$/d' | \
+#    sed -e '$!N;s/\n/ /' | \
+#    sort | \
+#    sed -e 's/^\(.*\)[[:space:]]\(https.*\)[[:space:]]\(.*\)/\3 (\1) \2/'
+ # filter request id and package name lines
+ # filter package name
+ # filter date and create SR URL
+ # delete spaces in beginning of the line
+ # delete separators
+ # merge lines
+ # sort
+ # move package name to the beginning of the line
+
+echo
+echo "=============================="
+echo "DELETE REQUESTS"
+echo "=============================="
+
+osc -A https://api.suse.de/ request list -t delete -D ${DAYS:=1} -s accepted ${PROJECT} | \
+    grep -A 1 "^[0-9]" | \
+    sed \
+        -e 's/^[[:space:]].*\/\(.*\)/\1/' \
+        -e 's;^\([[:digit:]]*\)  .*When:\(.*\);\2 https://build.suse.de/request/show/\1;' \
+        -e 's/^[[:space:]]*//' \
+        -e '/^--$/d' | \
+    sed -e '$!N;s/\n/ /' | \
+    sort | \
+    sed -e 's/^\(.*\)[[:space:]]\(https.*\)[[:space:]]\(.*\)/\3 (\1) \2/'
+
+echo
+    #sed -e '$!N;s/\([0-9].*\)\(\n\)\(.*\)/\3\2\1/;t' -e 'P;D' | \
+ # swap lines

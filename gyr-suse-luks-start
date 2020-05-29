@@ -1,0 +1,20 @@
+#!/usr/bin/env sh
+################################################################################
+#
+# Author: Gustavo Yokoyama Ribeiro <gyr AT protonmail DOT ch>
+# File:  gyr-suse-luks-start
+# Update: 20181017
+# (C) Copyright 2018 Gustavo Yokoyama Ribeiro
+# Licensed under CreativeCommons Attribution-ShareAlike 3.0 Unsupported
+# http://creativecommons.org/licenses/by-sa/3.0/ for more info.
+# Description: 
+# Usage: 
+#
+################################################################################
+
+_eDisk='/data/encryptedDisk'
+_eVolume='encryptedVolume'
+_eDirectory='/data/encryptedDirectory'
+
+sudo cryptsetup -v luksOpen ${_eDisk} ${_eVolume}
+sudo mount /dev/mapper/${_eVolume} ${_eDirectory}
