@@ -1,3 +1,0 @@
-#!/usr/bin/env sh
-
-osc ls openSUSE:Factory:Staging:adi:$1 | xargs osc staging select --move openSUSE:Factory:Staging:adi:$2
