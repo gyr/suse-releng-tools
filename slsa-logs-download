@@ -1,0 +1,68 @@
+#!/usr/bin/env sh
+#
+SLSAURL='https://ibs-slsa-botmaster.suse.de'
+
+function usage() {
+    printf "Usage: %s -p project\n" $(basename $0)
+    rm -rf index.html
+    wget -q ${SLSAURL}
+    printf "Projects:\n"
+    awk -F "</a>|>" '/SUSE.*/ {print $2 }' "index.html"
+    rm -rf index.html
+}
+
+while getopts "p:" opt; do
+    case $opt in
+        p)
+            PROJECT=${OPTARG}
+            ;;
+        ?)
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+if [ -z "${PROJECT}" ] ; then
+    usage
+    exit 1
+fi
+
+if hash lnav ; then
+    LOG_VIEWER=lnav
+else
+    LOG_VIEWER=vim
+fi
+
+function getall() {
+    local BASE_DIR=${HOME}/work/SP6
+    local DOWNLOAD_DIR=${BASE_DIR}/ibs-slsa-botmaster.suse.de
+
+    rm -rfv ${DOWNLOAD_DIR}
+
+    cd ${BASE_DIR}
+
+    wget -r --no-parent ${SLSAURL}/SUSE%3ASLE-15-SP6%3AGA
+
+    ${LOG_VIEWER} ${BASE_DIR}/${PROJECT}/pkglistgen.log
+}
+
+function getminimal() {
+    rm -vf {pkglistgen,relpkggen}.log
+    wget ${SLSAURL}/${PROJECT}/pkglistgen.log
+
+    ${LOG_VIEWER} pkglistgen.log
+    read -p "View relpkggen.log? [y/N] "
+    if [[ "${REPLY}" =~ [Yy] ]]; then
+        wget ${SLSAURL}/${PROJECT}/relpkggen.log
+        ${LOG_VIEWER} relpkggen.log
+    fi
+
+    read -p "Delete log files? [Y/n] "
+    if [[ "${REPLY}" =~ [Nn] ]]; then
+        return
+    fi
+    rm -vf {pkglistgen,relpkggen}.log
+}
+
+getminimal
