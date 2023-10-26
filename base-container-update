@@ -1,0 +1,40 @@
+#!/usr/bin/env sh
+# Always exit on errors
+set -e
+
+CONTAINER_MANAGER='podman'
+CONTAINER_WRAPPER=$(basename $0 | cut -f1 -d '-')
+CONTAINER_REGISTRY='registry.opensuse.org'
+CONTAINER_IMAGE="home/gyribeiro/containers/containers/${CONTAINER_WRAPPER}-osc"
+
+${CONTAINER_MANAGER} pull ${CONTAINER_REGISTRY}/${CONTAINER_IMAGE}
+${CONTAINER_MANAGER} image ls
+${CONTAINER_MANAGER} image history ${CONTAINER_IMAGE}
+
+if [[ "${CONTAINER_WRAPPER}" == 'toolbox' ]]; then
+    CONTAINER_NAME="toolbox-${USER}-user"
+    CREATE_PARAMS='-u'
+    RUN_PARAMS='-u'
+fi
+if [[ "${CONTAINER_WRAPPER}" == 'distrobox' ]]; then
+    CONTAINER_NAME="${CONTAINER_WRAPPER}-osc"
+    VOLUME_DIR="/data"
+    if [ -d ${VOLUME_DIR} ]; then
+        CREATE_PARAMS="--name ${CONTAINER_NAME} --volume ${VOLUME_DIR}:${VOLUME_DIR}"
+    else
+        CREATE_PARAMS="--name ${CONTAINER_NAME}"
+    fi
+    RUN_PARAMS="enter ${CONTAINER_NAME}"
+#    if [ -d /dev/vboxusb ]
+#    then
+#        for dir in /dev/vboxusb /dev/vboxusb/001 /dev/vboxusb/003 /dev/vboxusb/004
+#        do
+#            sudo chmod 755 ${dir}
+#        done
+#    fi
+fi
+
+${CONTAINER_MANAGER} container prune --force
+${CONTAINER_WRAPPER} create --image ${CONTAINER_REGISTRY}/${CONTAINER_IMAGE} ${CREATE_PARAMS}
+${CONTAINER_MANAGER} image prune --force
+${CONTAINER_WRAPPER} ${RUN_PARAMS}
