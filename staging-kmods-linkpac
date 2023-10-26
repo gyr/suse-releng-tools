@@ -1,0 +1,43 @@
+#!/usr/bin/env sh
+
+APIURL='https://api.suse.de/'
+
+function usage() {
+    printf "Usage: %s [-a api_url] -p project -s staging\n" $(basename $0)
+}
+
+while getopts "a:p:s:" opt; do
+    case $opt in
+        a)
+            APIURL=${OPTARG}
+            ;;
+        p)
+            PROJECT=${OPTARG}
+            ;;
+        s)
+            STAGING=$OPTARG
+            ;;
+        ?)
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+if [ -z "${PROJECT}" ] ; then
+    usage
+    exit 1
+fi
+if [ -z "${STAGING}" ] ; then
+    usage
+    exit 1
+fi
+
+#PACKAGES="kernel-source crash dpdk oracleasm lttng-modules drbd"
+PACKAGES="crash dpdk oracleasm lttng-modules drbd"
+STAGING_PROJECT="${PROJECT}:Staging:${STAGING}"
+
+for PACKAGE in ${PACKAGES}; do
+    #osc -A ${APIURL} api -X POST "/source/${PROJECT}/${PACKAGE}?cmd=instantiate&makeoriginolder=1"
+    osc -A ${APIURL} linkpac ${PROJECT} ${PACKAGE} ${STAGING_PROJECT}
+done
