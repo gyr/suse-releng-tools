@@ -1,0 +1,42 @@
+#!/usr/bin/env sh
+
+TIMER=600
+APIURL='https://api.suse.de/'
+REPOSITORY=images
+
+function usage() {
+    printf "Usage: %s [-a api_url] -p project [-r repository] [-t timer]\n" $(basename $0)
+}
+
+while getopts "a:p:r:t:" opt; do
+    case $opt in
+        a)
+            APIURL=${OPTARG}
+            ;;
+        p)
+            PROJECT=${OPTARG}
+            ;;
+        r)
+            REPOSITORY=${OPTARG}
+            ;;
+        t)
+            TIMER=${OPTARG}
+            ;;
+        ?)
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+if [ -z "${PROJECT}" ] ; then
+    usage
+    exit 1
+fi
+
+while (osc -A ${APIURL} api "/build/${PROJECT}/_result?view=summary&repository=${REPOSITORY}" | grep "result project" | grep -v 'code="published" state="published">'); do
+    echo PENDING
+    sleep ${TIMER}
+done
+
+osc -A ${APIURL} api "/build/${PROJECT}/_result?view=summary&repository=${REPOSITORY}" | grep "result project" | grep 'code="published" state="published">' && echo PUBLISHED
