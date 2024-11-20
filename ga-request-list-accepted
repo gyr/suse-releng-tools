@@ -3,19 +3,29 @@
 APIURL='https://api.suse.de/'
 
 function usage() {
-    printf "Usage: %s [-a api_url] -p project [-t days]\n" $(basename $0)
+    printf "Usage: %s [-a api_url] [-d days] [-f from_date] -p project\n" $(basename $0)
 }
 
-while getopts "a:p:t:" opt; do
+function days_from () {
+    from_date="$1"
+    days_diff=$(( (`date -d "00:00" +%s` - `date -d "$from_date" +%s`) / (24*3600) ));
+    [ "$days_diff" -lt 0 ] && echo "${from_date} is in the future!" >&2 && exit 1
+    printf "%s" "$days_diff"
+}
+
+while getopts "a:p:d:f:" opt; do
     case $opt in
         a)
             APIURL=${OPTARG}
             ;;
         p)
-            PROJECT=$OPTARG
+            PROJECT=${OPTARG}
             ;;
-        t)
-            TIME_RANGE="-D $OPTARG"
+        d)
+            DAYS="-D ${OPTARG}"
+            ;;
+        f)
+            DAYS="-D $(days_from ${OPTARG})"
             ;;
         ?)
             usage
@@ -30,7 +40,7 @@ if [ -z "${PROJECT}" ] ; then
 fi
 
 
-ex <(osc -A ${APIURL} request list -t submit ${TIME_RANGE} -s accepted ${PROJECT}) << EOF
+ex <(osc -A ${APIURL} request list -t submit ${DAYS} -s accepted ${PROJECT}) << EOF
 # cleanup input
 v/^[[:digit:]]\|submit:/d
 # join lines 2 by 2
@@ -48,7 +58,7 @@ SUBMIT REQUESTS
 q!
 EOF
 
-ex <(osc -A ${APIURL} request list -t delete ${TIME_RANGE} -s accepted ${PROJECT}) << EOF
+ex <(osc -A ${APIURL} request list -t delete ${DAYS} -s accepted ${PROJECT}) << EOF
 # cleanup input
 v/^[[:digit:]]\|delete:/d
 # join lines 2 by 2
