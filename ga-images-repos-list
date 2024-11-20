@@ -1,0 +1,56 @@
+#!/bin/sh
+
+APIURL='https://api.suse.de/'
+
+function usage() {
+    printf "Usage: %s [-a api_url] -p project\n" $(basename $0)
+}
+
+while getopts "a:p:" opt; do
+    case $opt in
+        a)
+            APIURL=${OPTARG}
+            ;;
+        p)
+            PROJECT=${OPTARG}
+            ;;
+        ?)
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+if [ -z "${PROJECT}" ] ; then
+    usage
+    exit 1
+fi
+
+EX_CMD="
+# delete all lines that do not start with space
+g/^[^ ]/d
+# delete all lines that start with space + underscore
+g/^[ ]*_/d
+# delete no image files
+g/sha256$\|report$\|json$\|milestone$\|packages$\|verified$\|asc$/d
+# sort images
+%!sort
+%p
+q!
+"
+
+function list_images() {
+    for i in $(osc -A ${APIURL} ls ${PROJECT} | \grep -E "^(kiwi-templates-Minimal|agama-installer-SLES):"); do
+        ex <(osc -A ${APIURL} ls ${PROJECT} $i -b -r images) <<< ${EX_CMD}
+    done
+}
+
+function list_repos() {
+    for i in $(osc -A ${APIURL} ls ${PROJECT} | \grep -E "^000productcompose:"); do
+        ex <(osc -A ${APIURL} ls ${PROJECT} $i -b -r product) <<< ${EX_CMD}
+    done
+}
+
+#PROJECT="SUSE:SLFO:Products:SLES:16.0"
+list_images # > ~/sles16-images-$(date +%Y%m%d_%H%M%S)
+list_repos # > ~/sles16-repos-$(date +%Y%m%d_%H%M%S)
