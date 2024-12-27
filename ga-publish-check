@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 TIMER=600
 APIURL='https://api.suse.de/'

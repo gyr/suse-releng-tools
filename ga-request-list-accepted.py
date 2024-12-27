@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
-import list_accepted_pkgs
 import logging
+import list_accepted_pkgs
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='List accepted packages')
@@ -9,11 +9,10 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--time', type=float, help='Only list requests changed in the last DAYS', required=True)
     parser.add_argument('-d', '--debug', action='store_true', help='debug output')
 
-
     args = parser.parse_args()
 
     level = logging.INFO
-    if (args.debug):
+    if args.debug:
         level = logging.DEBUG
     logging.basicConfig(level=level)
     logger = logging.getLogger(__name__)
@@ -22,7 +21,7 @@ if __name__ == '__main__':
     list_accepted_pkgs.osc_prepare(osc_config="/home/gyr/.config/osc/oscrc", osc_server="https://api.suse.de/")
 
     submit_requests, delete_requests = list_accepted_pkgs.main(
-        "https://api.suse.de/",args.project,args.time
+        "https://api.suse.de/", args.project, args.time
     )
     # Print both retrieved lists with format: "pkg-name (YYYY-MM-DDThh:mm:ss) hyperlink-to-request"
     print("==============================")

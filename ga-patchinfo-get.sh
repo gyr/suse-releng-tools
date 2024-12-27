@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 APIURL='https://api.suse.de/'
 REPOSITORY=images

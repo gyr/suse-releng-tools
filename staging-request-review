@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+
+APIURL='https://api.suse.de/'
+
+usage() {
+    printf "Usage: %s [-a api_url] -p project -s staging\n" $(basename $0)
+}
+
+while getopts "a:p:s:" opt; do
+    case $opt in
+        a)
+            APIURL=${OPTARG}
+            ;;
+        p)
+            PROJECT=${OPTARG}
+            ;;
+        s)
+            STAGING=${OPTARG}
+            ;;
+        ?)
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+if [ -z "${PROJECT}" ] || [ -z "${STAGING}" ] ; then
+    usage
+    exit 1
+fi
+
+STAGING_PROJECT="${PROJECT}:Staging:${STAGING}"
+
+EX_CMD="
+# filter lines
+v/^[[:digit:]]\|submit:\|.* sle-release-managers/d
+# :g/^/: The :global command. /^/ matches every line (beginning of line).
+# if line('.') < line('$')-1: Checks if the current line is at least two lines away from the end of the file. This condition prevents attempting to join lines that don't exist.
+# .,+2join: Joins the current line and the next two lines.
+# endif: Closes the if statement.
+g/^/if line('.') < line('$')-1 | .,+2join | endif
+# delete reviewed requests
+g/Review by Group      is accepted:  sle-release-managers(/d
+# filter request id
+%s/\s.*//
+%p
+q!
+"
+
+REQUESTS=$(ex <(osc -A ${APIURL} review list -P ${STAGING_PROJECT} ${PROJECT}) <<< ${EX_CMD})
+
+if [ -z "${REQUESTS}" ]; then
+    printf "No request waiting for review.\n"
+    exit 0
+fi
+
+printf "Requests waiting for review in %s\n" ${STAGING_PROJECT}
+for i in ${REQUESTS}; do
+    printf "%d\n" $i
+done
+
+read -p "Start review? [Y/n] "
+if [[ "${REPLY}" =~ [Nn] ]]; then
+    exit 0
+fi
+
+for i in ${REQUESTS}; do
+    read -p "Review $i? [Y/n] "
+    if [[ "${REPLY}" =~ [Nn] ]]; then
+        continue
+    else
+        osc -A ${APIURL} review show -d $i | delta
+        read -p "Do you want to approve it? [y/N] "
+        if [[ "${REPLY}" =~ [Yy] ]]; then
+            osc -A ${APIURL} review accept -m "OK" -G sle-release-managers $i
+        fi
+    fi
+done

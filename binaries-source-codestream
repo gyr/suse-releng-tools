@@ -1,10 +1,10 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
-CURRENT_CODESTREAM="SUSE:SLE-15-SP2:GA"
+CURRENT_CODESTREAM="SUSE:SLE-15-SP3:GA"
 OLD_CODESTREAM="SUSE:SLE-15:GA"
 PACKAGE_NAME=
 BINARY_PATTERN=
-PACKAGEGROUPS_DIR="${HOME}/ibs/home:gyribeiro:branches:SUSE:SLE-15-SP2:GA/000package-groups"
+PACKAGEGROUPS_DIR="${HOME}/ibs/home:gyribeiro:branches:SUSE:SLE-15-SP3:GA/000package-groups"
 CURRENT_CODESTREAM_BINARIES="/tmp/binaries-source-codestream.cache"
 
 while getopts "c:o:p:b:d:r" opt; do

@@ -1,12 +1,12 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 APIURL='https://api.suse.de/'
 
-function usage() {
+usage() {
     printf "Usage: %s [-a api_url] [-d days] [-f from_date] -p project\n" $(basename $0)
 }
 
-function days_from () {
+days_from () {
     from_date="$1"
     days_diff=$(( (`date -d "00:00" +%s` - `date -d "$from_date" +%s`) / (24*3600) ));
     [ "$days_diff" -lt 0 ] && echo "${from_date} is in the future!" >&2 && exit 1
