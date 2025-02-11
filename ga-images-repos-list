@@ -32,7 +32,7 @@ g/^[^ ]/d
 # delete all lines that start with space + underscore
 g/^[ ]*_/d
 # delete no image files
-g/sha256$\|report$\|json$\|milestone$\|packages$\|verified$\|asc$/d
+g/sha256$\|report$\|json$\|milestone$\|packages$\|verified$\|asc$\|rpm$/d
 # sort images
 %!sort
 %p

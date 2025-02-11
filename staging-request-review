@@ -33,7 +33,7 @@ STAGING_PROJECT="${PROJECT}:Staging:${STAGING}"
 
 EX_CMD="
 # filter lines
-v/^[[:digit:]]\|submit:\|.* sle-release-managers/d
+v/^[[:digit:]]\|submit:\|delete:\|.* sle-release-managers/d
 # :g/^/: The :global command. /^/ matches every line (beginning of line).
 # if line('.') < line('$')-1: Checks if the current line is at least two lines away from the end of the file. This condition prevents attempting to join lines that don't exist.
 # .,+2join: Joins the current line and the next two lines.
