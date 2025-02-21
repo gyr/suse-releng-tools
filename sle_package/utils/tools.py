@@ -1,5 +1,6 @@
 import datetime
 import subprocess
+import sys
 
 from typing import List
 
@@ -77,7 +78,7 @@ def popen_command(command: List[str], text=True):
         raise
 
 
-def run_command_and_stream_output(command):
+def run_command_and_stream_output(command: List[str]):
     """
     Runs an external command and yields its output line by line.
     """
@@ -89,6 +90,7 @@ def run_command_and_stream_output(command):
             for line in iter(process.stdout.readline, ''):
                 line = line.strip()
                 if line:
+                    log.debug(">> %s", line)
                     yield line
             stderr = ""
             for line in iter(process.stderr.readline, ''):
@@ -108,6 +110,36 @@ def run_command_and_stream_output(command):
     except Exception as e:
         log.error("Unexpected error: %s", e)
         raise
+
+
+def pager_command(command: List[str], output) -> None:
+    """
+    Pages the given output using command
+
+    :param command: pager command, e.g ['less', '-F', '-R', '-S', '-X', '-K']
+    :param output: output to be paged
+    """
+    try:
+        # Use less as the pager
+        pager = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=sys.stdout)
+        try:
+            if isinstance(output, str):  # Handle single string or list of strings
+                pager.stdin.write(output.encode())
+            elif isinstance(output, list):
+                for line in output:
+                    pager.stdin.write((line + '\n').encode())
+            pager.stdin.close()
+            pager.wait()
+        except KeyboardInterrupt:  # Allow user to exit less with Ctrl+C
+            pass
+        except BrokenPipeError:  # Allow user to exit less with Ctrl+C
+            pass
+        finally:  # Ensure pager is terminated
+            pager.terminate()
+    except FileNotFoundError:  # Handle cases where less is not installed
+        log.error("%s command not found. Printing output directly:", command[0])
+        log.error("%s", output)
+
 
 
 def split_lines_ignore_empty(text: str) -> List[str]:
@@ -142,3 +174,21 @@ def count_days(initial_date, final_date):
 
     delta = end_date - start_date
     return delta.days
+
+
+def ask_action(prompt="Do you want to proceed?", allowed_responses=["y", "n", "a"]):
+    """Asks the user what action the user wants and handles the response.
+
+    Args:
+        prompt: The question to ask the user.
+        allowed_responses: A set of allowed responses. Defaults to ["y", "n", "a"].
+    """
+    prompt += " (y/n/a): "
+    while True:
+        response = input(prompt).strip().lower()
+
+        if response in allowed_responses:
+            return response
+
+        allowed_string = ", ".join(allowed_responses)
+        log.error("Invalid response. Please enter one of: %s", allowed_string)

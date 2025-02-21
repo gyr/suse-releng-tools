@@ -40,7 +40,7 @@ def import_sle_module(name: str):
 
 
 def main() -> None:
-    module_list = ["artifacts", "requests"]
+    module_list = ["artifacts", "requests", "reviews"]
     for module in module_list:
         import_sle_module(module)
     argcomplete.autocomplete(PARSER)
