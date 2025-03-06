@@ -17,9 +17,9 @@ def valid_days(days: str) -> str:
             msg = "Days must be a nonzero positive number."
             raise argparse.ArgumentTypeError(msg)
         return days
-    except ValueError:
+    except ValueError as exc:
         msg = f"Not a valid days: '{days}'. Must a nonzero positive number."
-        raise argparse.ArgumentTypeError(msg)
+        raise argparse.ArgumentTypeError(msg) from exc
 
 
 def valid_date(string_date: str) -> datetime.date:
@@ -32,16 +32,16 @@ def valid_date(string_date: str) -> datetime.date:
             msg = f"Date {formated_date} is in the future."
             raise argparse.ArgumentTypeError(msg)
         return formated_date
-    except ValueError:
+    except ValueError as exc:
         msg = f"Not a valid date: '{string_date}'.  Use YYYY-MM-DD format."
-        raise argparse.ArgumentTypeError(msg)
+        raise argparse.ArgumentTypeError(msg) from exc
 
 
 def list_requests(
         api_url: str,
         project: str,
         request_type: str,
-        time_period: str = ""):
+        time_period: str = "") -> None:
     """
     List all requests accpeted on OBS project
 
@@ -78,9 +78,10 @@ EOF
         print(formated_line)
 
 
-def build_parser(parent_parser):
+def build_parser(parent_parser) -> None:
     """
-    Builds the parser for this script. This is executed by the main CLI dynamically.
+    Builds the parser for this script. This is executed by the main CLI
+    dynamically.
 
     :return: The subparsers object from argparse.
     """
@@ -111,7 +112,7 @@ def build_parser(parent_parser):
     subparser.set_defaults(func=main)
 
 
-def main(args):
+def main(args) -> None:
     """
     Main method that get the list of all artifacts from a given OBS project
 

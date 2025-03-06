@@ -3,7 +3,7 @@ import logging
 
 def logger_setup(name: str,
                  verbose: bool = False,
-                 log_file: bool = False):
+                 log_file: bool = False) -> logging.Logger:
     logger = logging.getLogger(name)
 
     if verbose:

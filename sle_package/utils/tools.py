@@ -1,8 +1,8 @@
 import datetime
 import subprocess
 import sys
+from typing import Any, Generator
 
-from typing import List
 
 from sle_package.utils.logger import logger_setup
 
@@ -10,10 +10,10 @@ from sle_package.utils.logger import logger_setup
 log = logger_setup(__name__)
 
 
-def run_command(command: List[str],
+def run_command(command: list[str],
                 capture_output=True,
                 text=True,
-                check=True):
+                check=True) -> dict[Any, Any]:
     """
     Run shell command that does not require redirection.
 
@@ -33,7 +33,7 @@ def run_command(command: List[str],
         raise
 
 
-def popen_command(command: List[str], text=True):
+def popen_command(command: list[str], text=True) -> str:
     """
     Used to run shell command that requires redirection, requires to run
     /bin/bash -c <shell_command>, e.g.:
@@ -78,7 +78,7 @@ def popen_command(command: List[str], text=True):
         raise
 
 
-def run_command_and_stream_output(command: List[str]):
+def run_command_and_stream_output(command: list[str]) -> Generator:
     """
     Runs an external command and yields its output line by line.
     """
@@ -112,7 +112,7 @@ def run_command_and_stream_output(command: List[str]):
         raise
 
 
-def pager_command(command: List[str], output) -> None:
+def pager_command(command: list[str], output) -> None:
     """
     Pages the given output using command
 
@@ -141,8 +141,7 @@ def pager_command(command: List[str], output) -> None:
         log.error("%s", output)
 
 
-
-def split_lines_ignore_empty(text: str) -> List[str]:
+def split_lines_ignore_empty(text: str) -> list[str]:
     """
     Splits a multi-line string into a list of lines, ignoring empty lines.
     :param text: multi-line string
@@ -151,7 +150,7 @@ def split_lines_ignore_empty(text: str) -> List[str]:
     return [line.strip() for line in text.splitlines() if line.strip()]
 
 
-def count_days(initial_date, final_date):
+def count_days(initial_date, final_date) -> int:
     """
     Calculates the number of days between 2 dates
 
@@ -176,19 +175,21 @@ def count_days(initial_date, final_date):
     return delta.days
 
 
-def ask_action(prompt="Do you want to proceed?", allowed_responses=["y", "n", "a"]):
-    """Asks the user what action the user wants and handles the response.
+def ask_action(prompt: str, allowed_responses=None) -> str:
+    """
+    Asks the user what action the user wants and handles the response.
 
     Args:
         prompt: The question to ask the user.
-        allowed_responses: A set of allowed responses. Defaults to ["y", "n", "a"].
+        allowed_responses: A set of allowed responses. Defaults to ["y", "n"].
     """
-    prompt += " (y/n/a): "
+    if allowed_responses is None:
+        allowed_responses = ['y', 'n']
+    allowed_string = ", ".join(allowed_responses)
+    prompt += f' ({allowed_string}): '
+
     while True:
         response = input(prompt).strip().lower()
-
         if response in allowed_responses:
             return response
-
-        allowed_string = ", ".join(allowed_responses)
         log.error("Invalid response. Please enter one of: %s", allowed_string)

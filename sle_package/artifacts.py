@@ -1,5 +1,4 @@
 import re
-from typing import List
 
 from sle_package.utils.logger import logger_setup
 from sle_package.utils.tools import run_command, run_command_and_stream_output
@@ -8,7 +7,7 @@ from sle_package.utils.tools import run_command, run_command_and_stream_output
 log = logger_setup(__name__)
 
 
-def list_packages(api_url: str, project: str) -> List[str]:
+def list_packages(api_url: str, project: str) -> list[str]:
     """
     List all source packages from a OBS project
 
@@ -25,7 +24,7 @@ def list_artifacs(api_url: str,
                   project: str,
                   repository: str,
                   pattern: str,
-                  packages: List[str]):
+                  packages: list[str]) -> None:
     """
     List all artifacts filtered by pattern in the specified repoistory
     from a OBS project
@@ -65,7 +64,8 @@ exit 0
 
 def build_parser(parent_parser):
     """
-    Builds the parser for this script. This is executed by the main CLI dynamically.
+    Builds the parser for this script. This is executed by the main CLI
+    dynamically.
 
     :return: The subparsers object from argparse.
     """
@@ -78,7 +78,7 @@ def build_parser(parent_parser):
     subparser.set_defaults(func=main)
 
 
-def main(args):
+def main(args) -> None:
     """
     Main method that get the list of all artifacts from a given OBS project
 

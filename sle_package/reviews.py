@@ -1,7 +1,5 @@
 import argparse
 import sys
-import re
-from typing import List
 
 from sle_package.utils.logger import logger_setup
 from sle_package.utils.tools import run_command, run_command_and_stream_output, pager_command, ask_action
@@ -22,12 +20,14 @@ def valid_staging(staging: str) -> str:
             msg = "Staging must be a single letter"
             raise argparse.ArgumentTypeError(msg)
         return staging
-    except ValueError:
+    except ValueError as exc:
         msg = f"Not a valid staging: '{staging}'. Must a single letter."
-        raise argparse.ArgumentTypeError(msg)
+        raise argparse.ArgumentTypeError(msg) from exc
 
 
-def list_requests(api_url: str, project: str, staging: str) -> List[tuple[str, str]]:
+def list_requests(api_url: str,
+                  project: str,
+                  staging: str) -> list[tuple[str, str]]:
     """
     List all source packages from a OBS project
 
@@ -90,9 +90,10 @@ def approve_request(api_url: str, request: str) -> None:
     print(output.stdout)
 
 
-def build_parser(parent_parser):
+def build_parser(parent_parser) -> None:
     """
-    Builds the parser for this script. This is executed by the main CLI dynamically.
+    Builds the parser for this script. This is executed by the main CLI
+    dynamically.
 
     :return: The subparsers object from argparse.
     """
@@ -110,7 +111,7 @@ def build_parser(parent_parser):
     subparser.set_defaults(func=main)
 
 
-def main(args):
+def main(args) -> None:
     """
     Main method that get the list of all artifacts from a given OBS project
 
@@ -123,7 +124,7 @@ def main(args):
     requests = list_requests(args.osc_instance, args.project, staging)
 
     if len(requests) == 0:
-        print(">>> All reviews done.")
+        print(">>> No pending reviews.")
         sys.exit(0)
 
     print(f">>> Request(s) to be reviewed on {staging}:")
@@ -131,21 +132,17 @@ def main(args):
         print(*request, sep=" - ")
 
     start_review = ask_action(f">>> Start the review of {staging}?")
-    if start_review in ('n', 'a'):
+    if start_review == 'n':
         sys.exit(0)
 
     for request in requests:
-        review_request = ask_action(f">>> Review {request[0]} - {request[1]}?")
+        review_request = ask_action(f">>> Review {request[0]} - {request[1]}?",
+                                    ['y', 'n', 'a'])
         if review_request == "y":
             show_request(args.osc_instance, request[0])
             request_approval = ask_action(f">>> Approve {request[0]} - {request[1]}?")
             if request_approval == "y":
                 approve_request(args.osc_instance, request[0])
-            elif request_approval == "n":
-                pass
-            elif request_approval == "a":
-                sys.exit(0)
-        elif review_request == "n":
-            pass
         elif review_request == "a":
             sys.exit(0)
+    print(">>> All reviews done.")

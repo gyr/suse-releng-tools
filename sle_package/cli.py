@@ -4,7 +4,7 @@ import importlib
 import sys
 import urllib.error
 
-import argcomplete  # type: ignore
+import argcomplete
 
 from sle_package.utils.logger import logger_setup
 
@@ -29,7 +29,7 @@ SUBPARSERS = PARSER.add_subparsers(
 log = logger_setup(__name__)
 
 
-def import_sle_module(name: str):
+def import_sle_module(name: str) -> None:
     """
     Imports a module
 
@@ -52,8 +52,9 @@ def main() -> None:
         except urllib.error.URLError as url_error:
             if "name or service not known" in str(url_error).lower():
                 log.error(
-                    "No connection to one of the tools. Please make sure the connection to the tools is available"
-                    " before executing the program!"
+                    "No connection to one of the tools. Please make sure the "
+                    "connection to the tools is available before executing "
+                    "the program!"
                 )
                 sys.exit(1)
         return
