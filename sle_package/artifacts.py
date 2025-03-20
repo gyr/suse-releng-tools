@@ -69,11 +69,13 @@ def build_parser(parent_parser):
 
     :return: The subparsers object from argparse.
     """
-    subparser = parent_parser.add_parser("artifacts", help="artifacts help")
+    subparser = parent_parser.add_parser("artifacts",
+                                         help="Return the list of artifacts from a OBS project.")
     subparser.add_argument("--project",
                            "-p",
                            dest="project",
                            type=str,
+                           help="OBS/IBS project.",
                            required=True)
     subparser.set_defaults(func=main)
 

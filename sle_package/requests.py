@@ -85,10 +85,12 @@ def build_parser(parent_parser) -> None:
 
     :return: The subparsers object from argparse.
     """
-    subparser = parent_parser.add_parser("requests", help="requests help")
+    subparser = parent_parser.add_parser("requests",
+                                         help="List all requests accepted or deleted in a given time.")
     subparser.add_argument("--project",
                            "-p",
                            dest="project",
+                           help="OBS/IBS project.",
                            type=str,
                            required=True)
     subparser.add_argument("--type",
@@ -96,19 +98,20 @@ def build_parser(parent_parser) -> None:
                            dest="request_type",
                            type=str,
                            choices=["submit", "delete"],
-                           help="Choose a request type (submit or delete)",
+                           help="Choose a request type (submit or delete).",
                            required=True)
     # Mutually exclusive group within the subparser
     group = subparser.add_mutually_exclusive_group(required=True)
     group.add_argument("--days",
                        "-d",
                        dest="days",
+                       help="Number of the days.",
                        type=valid_days)
     group.add_argument("--from_date",
                        "-f",
                        dest="date",
                        type=valid_date,
-                       help="Date in YYYY-MM-DD format")
+                       help="Date in YYYY-MM-DD format.")
     subparser.set_defaults(func=main)
 
 

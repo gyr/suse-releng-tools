@@ -97,16 +97,18 @@ def build_parser(parent_parser) -> None:
 
     :return: The subparsers object from argparse.
     """
-    subparser = parent_parser.add_parser("reviews", help="reviews help")
+    subparser = parent_parser.add_parser("reviews", help="Review submit and delete requests.")
     subparser.add_argument("--project",
                            "-p",
                            dest="project",
+                           help="OBS/IBS project.",
                            type=str,
                            required=True)
     subparser.add_argument("--staging",
                            "-s",
                            dest="staging",
                            type=valid_staging,
+                           help="Staging letter.",
                            required=True)
     subparser.set_defaults(func=main)
 

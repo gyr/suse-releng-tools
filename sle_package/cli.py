@@ -9,7 +9,7 @@ import argcomplete
 from sle_package.utils.logger import logger_setup
 
 PARSER = argparse.ArgumentParser(
-    description="Return the list of artifacts from a OBS project"
+    description="Release management tools."
 )
 PARSER.add_argument(
     "--osc-config",
