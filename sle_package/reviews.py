@@ -61,7 +61,10 @@ EOF
     for line in run_command_and_stream_output(command):
         line_fields = line.split()
         # ['000000', 'State:review(approved)', 'By:foo', 'When:2025-02-14T15:29:41', 'submit:', 'SUSE:SLFO:Main/utempter', '->', 'SUSE:SLFO:Main', 'Review', 'by', 'Group', 'is', 'new:', 'sle-release-managers']
-        request = (line_fields[0], line_fields[5].rsplit('/', 1)[1].split('@', 1)[0])
+        request = (
+            line_fields[0],
+            line_fields[5].rsplit('/', 1)[1].split('@', 1)[0].replace('.SUSE_SLFO_Main', '')
+        )
         requests.append(request)
     return requests
 
