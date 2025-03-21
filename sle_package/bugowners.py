@@ -67,9 +67,11 @@ def approve_request(api_url: str, request: str) -> None:
     :param api_url: OBS instance
     :param request: request ID
     """
-    command = f"osc -A {api_url} review accept -m 'OK' -G sle-release-managers {request}"
-    output = run_command(command.split())
-    print(output.stdout)
+    groups: tuple[str, str] = ('sle-release-managers', 'sle-staging-managers')
+    for group in groups:
+        command = f"osc -A {api_url} review accept -m 'OK' -G {group} {request}"
+        output = run_command(command.split())
+        print(f'{group}: {output.stdout}')
 
 
 def build_parser(parent_parser) -> None:
