@@ -7,13 +7,14 @@ from typing import Any, Generator
 from sle_package.utils.logger import logger_setup
 
 
+# log = logger_setup(__name__, True)
 log = logger_setup(__name__)
 
 
 def run_command(command: list[str],
                 capture_output=True,
                 text=True,
-                check=True) -> dict[Any, Any]:
+                check=True) -> subprocess.CompletedProcess[Any]:
     """
     Run shell command that does not require redirection.
 
@@ -21,6 +22,7 @@ def run_command(command: list[str],
     :return: dict with stdout and sterr
     """
     try:
+        log.debug(">> command = %s", command)
         result = subprocess.run(
             command, capture_output=capture_output, text=text, check=check
         )
@@ -52,26 +54,23 @@ def popen_command(command: list[str], text=True) -> str:
     :return: string with stdout
     """
     try:
-        process = subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=text,
-        )
+        with subprocess.Popen(command,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE,
+                              text=text) as process:
+            stdout, stderr = process.communicate()
 
-        stdout, stderr = process.communicate()
+            if process.returncode != 0:
+                log.error("Failed to execute: %s", command)
+                log.error("Return code: %s", process.returncode)
+                log.error("Stderr: %s", stderr)
 
-        if process.returncode != 0:
-            log.error("Failed to execute: %s", command)
-            log.error("Return code: %s", process.returncode)
-            log.error("Stderr: %s", stderr)
-
-        return stdout
+            return stdout
     except FileNotFoundError:
         log.error("Command not found: %s", command[0])
         raise
     except OSError as e:
-        log.error("Error executing command: %s", e)
+        log.error("Error executing command '%s': %s", command[0], e)
         raise
     except Exception as e:
         log.error("Unexpected error: %s", e)
@@ -105,7 +104,7 @@ def run_command_and_stream_output(command: list[str]) -> Generator:
         log.error("%s not found", command[0])
         raise
     except OSError as e:
-        log.error("Error executing command: %s", e)
+        log.error("Error executing command '%s': %s", command[0], e)
         raise
     except Exception as e:
         log.error("Unexpected error: %s", e)
