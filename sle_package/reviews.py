@@ -93,20 +93,21 @@ def approve_request(api_url: str, request: str) -> None:
     print(output.stdout)
 
 
-def build_parser(parent_parser) -> None:
+def build_parser(parent_parser, config) -> None:
     """
     Builds the parser for this script. This is executed by the main CLI
     dynamically.
 
+    :param config: Lua config table
     :return: The subparsers object from argparse.
     """
     subparser = parent_parser.add_parser("reviews", help="Review submit and delete requests.")
     subparser.add_argument("--project",
                            "-p",
                            dest="project",
-                           help="OBS/IBS project.",
+                           help=f'OBS/IBS project (DEFAULT = {config.common.default_project}).',
                            type=str,
-                           required=True)
+                           default=config.common.default_project)
     subparser.add_argument("--staging",
                            "-s",
                            dest="staging",
@@ -116,11 +117,12 @@ def build_parser(parent_parser) -> None:
     subparser.set_defaults(func=main)
 
 
-def main(args) -> None:
+def main(args, config) -> None:
     """
     Main method that get the list of all artifacts from a given OBS project
 
     :param args: Argparse Namespace that has all the arguments
+    :param config: Lua config table
     """
     # Parse arguments
     if args.staging:

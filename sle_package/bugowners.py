@@ -1,4 +1,3 @@
-import argparse
 import sys
 
 from sle_package.utils.logger import logger_setup
@@ -74,28 +73,30 @@ def approve_request(api_url: str, request: str) -> None:
         print(f'{group}: {output.stdout}')
 
 
-def build_parser(parent_parser) -> None:
+def build_parser(parent_parser, config) -> None:
     """
     Builds the parser for this script. This is executed by the main CLI
     dynamically.
 
+    :param config: Lua config table
     :return: The subparsers object from argparse.
     """
     subparser = parent_parser.add_parser("bugowners", help="Review bugowner requests.")
     subparser.add_argument("--project",
                            "-p",
                            dest="project",
-                           help="OBS/IBS project.",
+                           help=f'OBS/IBS project (DEFAULT = {config.common.default_project}).',
                            type=str,
-                           required=True)
+                           default=config.common.default_project)
     subparser.set_defaults(func=main)
 
 
-def main(args) -> None:
+def main(args, config) -> None:
     """
     Main method that get the list of all artifacts from a given OBS project
 
     :param args: Argparse Namespace that has all the arguments
+    :param config: Lua config table
     """
     requests = list_requests(args.osc_instance, args.project)
 

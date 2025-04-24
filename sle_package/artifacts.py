@@ -35,6 +35,9 @@ def list_artifacs(api_url: str,
     :param pattern: used to filter the artifacts that will be returned
     :param project: list of source packages
     """
+    log.debug(">> pattern = %s", pattern)
+    pattern = re.compile(pattern)
+    log.debug(">> pattern = %s", pattern)
     for package in packages:
         if re.search(pattern, package):
             command = [
@@ -62,11 +65,12 @@ exit 0
                 print(line)
 
 
-def build_parser(parent_parser):
+def build_parser(parent_parser, config) -> None:
     """
     Builds the parser for this script. This is executed by the main CLI
     dynamically.
 
+    :param config: Lua config table
     :return: The subparsers object from argparse.
     """
     subparser = parent_parser.add_parser("artifacts",
@@ -74,17 +78,18 @@ def build_parser(parent_parser):
     subparser.add_argument("--project",
                            "-p",
                            dest="project",
+                           help=f'OBS/IBS project (DEFAULT = {config.artifacts.default_product}).',
                            type=str,
-                           help="OBS/IBS project.",
-                           required=True)
+                           default=config.artifacts.default_product)
     subparser.set_defaults(func=main)
 
 
-def main(args) -> None:
+def main(args, config) -> None:
     """
     Main method that get the list of all artifacts from a given OBS project
 
     :param args: Argparse Namespace that has all the arguments
+    :param config: Lua config table
     """
     # Parse arguments
     parameters = {
@@ -95,13 +100,13 @@ def main(args) -> None:
 
     parameters.update({
         "repository": "images",
-        "pattern": r"\b(kiwi-templates-Minimal|agama-installer-SLES)\b",
+        "pattern": config.artifacts.images_pattern,
         "packages": packages
     })
     list_artifacs(**parameters)
 
     parameters.update({
         "repository": "product",
-        "pattern": r"\b(000productcompose:)\b"
+        "pattern": config.artifacts.prodcuts_pattern,
     })
     list_artifacs(**parameters)
