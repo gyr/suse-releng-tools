@@ -7,7 +7,7 @@ import urllib.error
 
 import argcomplete
 from dotenv import load_dotenv
-from lupa import LuaRuntime
+from lupa import LuaRuntime  # type: ignore
 
 from sle_package.utils.logger import logger_setup
 

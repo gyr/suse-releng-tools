@@ -1,4 +1,12 @@
 import re
+from argparse import Namespace
+from typing import Any  # If LuaTable import fails, you might temporarily use Any
+
+try:
+    from lupa import LuaTable  # type: ignore
+except ImportError:
+    LuaTable = Any  # Fallback if LuaTable cannot be imported
+
 
 from sle_package.utils.logger import logger_setup
 from sle_package.utils.tools import run_command, run_command_and_stream_output
@@ -20,49 +28,40 @@ def list_packages(api_url: str, project: str) -> list[str]:
     return output.stdout
 
 
-def list_artifacs(api_url: str,
-                  project: str,
-                  repository: str,
-                  pattern: str,
-                  packages: list[str]) -> None:
+def list_artifacs(
+    api_url: str, project: str, packages: list[str], repo_info: Any
+) -> None:
     """
     List all artifacts filtered by pattern in the specified repoistory
     from a OBS project
 
     :param api_url: OBS instance
     :param project: OBS project
-    :param repository: OBS repository
-    :param pattern: used to filter the artifacts that will be returned
     :param project: list of source packages
+    :param repo_info: Lua Table with repository info
     """
+    log.debug(">> pattern = %s", repo_info.pattern)
+    pattern = re.compile(repo_info.pattern)
     log.debug(">> pattern = %s", pattern)
-    pattern = re.compile(pattern)
-    log.debug(">> pattern = %s", pattern)
+    # invalid_start = (repo_info.invalid_start, repo_info.name)
+    invalid_start = tuple(
+        str(repo_info.invalid_start[i]) for i in repo_info.invalid_start
+    )
+    invalid_extensions = tuple(
+        str(repo_info.invalid_extensions[i]) for i in repo_info.invalid_extensions
+    )
+
     for package in packages:
         if re.search(pattern, package):
             command = [
                 "/bin/bash",
                 "-c",
-                f"""
-ex <(osc -A {api_url} ls {project} {package} -b -r {repository}) << EOF
-# delete all lines that do not start with space
-g/^[^ ]/d
-# delete all lines that start with space + underscore
-g/^[ ]*_/d
-# delete no image files
-g/sha256$\|report$\|json$\|milestone$\|packages$\|verified$\|asc$\|rpm$/d
-# sort artifacts
-%!sort
-# print artifacts
-%p
-# exit ex
-q!
-EOF
-exit 0
-"""
+                f"osc -A {api_url} ls {project} {package} -b -r {repo_info.name}",
             ]
             for line in run_command_and_stream_output(command):
-                print(line)
+                if not line.startswith(tuple(invalid_start)):
+                    if not line.endswith(invalid_extensions):
+                        print(line)
 
 
 def build_parser(parent_parser, config) -> None:
@@ -73,18 +72,21 @@ def build_parser(parent_parser, config) -> None:
     :param config: Lua config table
     :return: The subparsers object from argparse.
     """
-    subparser = parent_parser.add_parser("artifacts",
-                                         help="Return the list of artifacts from a OBS project.")
-    subparser.add_argument("--project",
-                           "-p",
-                           dest="project",
-                           help=f'OBS/IBS project (DEFAULT = {config.artifacts.default_product}).',
-                           type=str,
-                           default=config.artifacts.default_product)
+    subparser = parent_parser.add_parser(
+        "artifacts", help="Return the list of artifacts from a OBS project."
+    )
+    subparser.add_argument(
+        "--project",
+        "-p",
+        dest="project",
+        help=f"OBS/IBS project (DEFAULT = {config.artifacts.default_product}).",
+        type=str,
+        default=config.artifacts.default_product,
+    )
     subparser.set_defaults(func=main)
 
 
-def main(args, config) -> None:
+def main(args: Namespace, config: LuaTable) -> None:
     """
     Main method that get the list of all artifacts from a given OBS project
 
@@ -92,21 +94,19 @@ def main(args, config) -> None:
     :param config: Lua config table
     """
     # Parse arguments
-    parameters = {
-        "api_url": args.osc_instance,
-        "project": args.project
-    }
+    parameters = {"api_url": args.osc_instance, "project": args.project}
     packages = list_packages(**parameters).split()
 
-    parameters.update({
-        "repository": "images",
-        "pattern": config.artifacts.images_pattern,
-        "packages": packages
-    })
-    list_artifacs(**parameters)
-
-    parameters.update({
-        "repository": "product",
-        "pattern": config.artifacts.prodcuts_pattern,
-    })
-    list_artifacs(**parameters)
+    parameters.update(
+        {
+            "packages": packages,
+        }
+    )
+    for index in config.artifacts.repositories:
+        repo_info = config.artifacts.get_repo_info(config, index)
+        parameters.update(
+            {
+                "repo_info": repo_info,
+            }
+        )
+        list_artifacs(**parameters)
