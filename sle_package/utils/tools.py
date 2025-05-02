@@ -149,7 +149,7 @@ def split_lines_ignore_empty(text: str) -> list[str]:
     return [line.strip() for line in text.splitlines() if line.strip()]
 
 
-def count_days(initial_date, final_date) -> int:
+def count_days(start_date_str: str, end_date_str: str="") -> int:
     """
     Calculates the number of days between 2 dates
 
@@ -158,20 +158,16 @@ def count_days(initial_date, final_date) -> int:
     :return: number of the days between 2 dates
     """
     try:
-        if isinstance(initial_date, str):
-            start_date = datetime.datetime.strptime(initial_date, "%Y-%m-%d").date()
+        start_date = datetime.date.fromisoformat(start_date_str)
+        if end_date_str:
+            end_date = datetime.date.fromisoformat(end_date_str)
         else:
-            start_date = initial_date
-        if isinstance(final_date, str):
-            end_date = datetime.datetime.strptime(final_date, "%Y-%m-%d").date()
-        else:
-            end_date = final_date
+            end_date = datetime.date.today()
+        time_difference = end_date - start_date
+        return time_difference.days
     except ValueError:
-        log.error("Invalid date format (YYYY-MM-D)")
+        log.error("Invalid date format. Please use YYYY-MM-DD.")
         raise
-
-    delta = end_date - start_date
-    return delta.days
 
 
 def ask_action(prompt: str, allowed_responses=None) -> str:

@@ -126,7 +126,7 @@ def main(args, config) -> None:
     if args.days:
         time_period = f"-D {args.days}"
     elif args.date:
-        days = count_days(args.date, datetime.date.today())
+        days = count_days(args.date)
         time_period = f"-D {days}"
 
     list_requests(
