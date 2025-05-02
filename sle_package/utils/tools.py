@@ -168,23 +168,3 @@ def count_days(start_date_str: str, end_date_str: str="") -> int:
     except ValueError:
         log.error("Invalid date format. Please use YYYY-MM-DD.")
         raise
-
-
-def ask_action(prompt: str, allowed_responses=None) -> str:
-    """
-    Asks the user what action the user wants and handles the response.
-
-    Args:
-        prompt: The question to ask the user.
-        allowed_responses: A set of allowed responses. Defaults to ["y", "n"].
-    """
-    if allowed_responses is None:
-        allowed_responses = ['y', 'n']
-    allowed_string = ", ".join(allowed_responses)
-    prompt += f' ({allowed_string}): '
-
-    while True:
-        response = input(prompt).strip().lower()
-        if response in allowed_responses:
-            return response
-        log.error("Invalid response. Please enter one of: %s", allowed_string)

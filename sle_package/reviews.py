@@ -1,12 +1,12 @@
 import argparse
 import sys
+from rich.prompt import Prompt
 
 from sle_package.utils.logger import logger_setup
 from sle_package.utils.tools import (
     run_command,
     run_command_and_stream_output,
     pager_command,
-    ask_action,
 )
 
 
@@ -200,17 +200,23 @@ def main(args, config) -> None:
     for request in requests:
         print(*request, sep=" - ")
 
-    start_review = ask_action(">>> Start the review?")
+    start_review = Prompt.ask(">>> Start the review?", choices=["y", "n"], default="y")
     if start_review == "n":
         sys.exit(0)
 
     for request in requests:
-        review_request = ask_action(
-            f">>> Review {request[0]} - {request[1]}?", ["y", "n", "a"]
+        review_request = Prompt.ask(
+            f">>> Review {request[0]} - {request[1]}?",
+            choices=["y", "n", "a"],
+            default="y",
         )
         if review_request == "y":
             show_request(args.osc_instance, request[0])
-            request_approval = ask_action(f">>> Approve {request[0]} - {request[1]}?")
+            request_approval = Prompt.ask(
+                f">>> Approve {request[0]} - {request[1]}?",
+                choices=["y", "n", "a"],
+                default="y",
+            )
             if request_approval == "y":
                 approve_request(args.osc_instance, request[0], args.bugowner)
         elif review_request == "a":
