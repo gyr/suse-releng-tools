@@ -2,7 +2,11 @@ import argparse
 import datetime
 
 from sle_package.utils.logger import logger_setup
-from sle_package.utils.tools import count_days, run_command_and_stream_output
+from sle_package.utils.tools import (
+    count_days,
+    run_command_and_stream_output,
+    running_spinner_decorator,
+)
 
 
 log = logger_setup(name=__name__)
@@ -37,11 +41,10 @@ def valid_date(string_date: str) -> datetime.date:
         raise argparse.ArgumentTypeError(msg) from exc
 
 
+@running_spinner_decorator
 def list_requests(
-        api_url: str,
-        project: str,
-        request_type: str,
-        time_period: str = "") -> None:
+    api_url: str, project: str, request_type: str, time_period: str = ""
+) -> None:
     """
     List all requests accpeted on OBS project
 
@@ -68,7 +71,7 @@ g/^$/d
 q!
 EOF
 [ $? -ne 0 ] && exit 0
-"""
+""",
     ]
     for line in run_command_and_stream_output(command):
         line_fields = line.split()
@@ -86,33 +89,38 @@ def build_parser(parent_parser, config) -> None:
     :param config: Lua config table
     :return: The subparsers object from argparse.
     """
-    subparser = parent_parser.add_parser("requests",
-                                         help="List all requests accepted or deleted in a given time.")
-    subparser.add_argument("--project",
-                           "-p",
-                           dest="project",
-                           help=f'OBS/IBS project (DEFAULT = {config.common.default_project}).',
-                           type=str,
-                           default=config.common.default_project)
-    subparser.add_argument("--type",
-                           "-t",
-                           dest="request_type",
-                           type=str,
-                           choices=["submit", "delete"],
-                           help="Choose a request type (submit or delete).",
-                           required=True)
+    subparser = parent_parser.add_parser(
+        "requests", help="List all requests accepted or deleted in a given time."
+    )
+    subparser.add_argument(
+        "--project",
+        "-p",
+        dest="project",
+        help=f"OBS/IBS project (DEFAULT = {config.common.default_project}).",
+        type=str,
+        default=config.common.default_project,
+    )
+    subparser.add_argument(
+        "--type",
+        "-t",
+        dest="request_type",
+        type=str,
+        choices=["submit", "delete"],
+        help="Choose a request type (submit or delete).",
+        required=True,
+    )
     # Mutually exclusive group within the subparser
     group = subparser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--days",
-                       "-d",
-                       dest="days",
-                       help="Number of the days.",
-                       type=valid_days)
-    group.add_argument("--from_date",
-                       "-f",
-                       dest="date",
-                       type=valid_date,
-                       help="Date in YYYY-MM-DD format.")
+    group.add_argument(
+        "--days", "-d", dest="days", help="Number of the days.", type=valid_days
+    )
+    group.add_argument(
+        "--from_date",
+        "-f",
+        dest="date",
+        type=valid_date,
+        help="Date in YYYY-MM-DD format.",
+    )
     subparser.set_defaults(func=main)
 
 
@@ -129,8 +137,4 @@ def main(args, config) -> None:
         days = count_days(args.date)
         time_period = f"-D {days}"
 
-    list_requests(
-        args.osc_instance,
-        args.project,
-        args.request_type,
-        time_period)
+    list_requests(args.osc_instance, args.project, args.request_type, time_period)

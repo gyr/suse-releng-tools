@@ -1,6 +1,7 @@
 import datetime
 import subprocess
 import sys
+from rich.status import Status
 from typing import Any, Generator
 
 
@@ -11,10 +12,19 @@ from sle_package.utils.logger import logger_setup
 log = logger_setup(__name__)
 
 
-def run_command(command: list[str],
-                capture_output=True,
-                text=True,
-                check=True) -> subprocess.CompletedProcess[Any]:
+def running_spinner_decorator(func):
+    def wrapper(*args, **kwargs):
+        with Status("Running...", spinner="dots") as status:
+            result = func(*args, **kwargs)
+            status.update("Finished!")
+        return result
+
+    return wrapper
+
+
+def run_command(
+    command: list[str], capture_output=True, text=True, check=True
+) -> subprocess.CompletedProcess[Any]:
     """
     Run shell command that does not require redirection.
 
@@ -54,10 +64,9 @@ def popen_command(command: list[str], text=True) -> str:
     :return: string with stdout
     """
     try:
-        with subprocess.Popen(command,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE,
-                              text=text) as process:
+        with subprocess.Popen(
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=text
+        ) as process:
             stdout, stderr = process.communicate()
 
             if process.returncode != 0:
@@ -82,17 +91,16 @@ def run_command_and_stream_output(command: list[str]) -> Generator:
     Runs an external command and yields its output line by line.
     """
     try:
-        with subprocess.Popen(command,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE,
-                              text=True) as process:
-            for line in iter(process.stdout.readline, ''):
+        with subprocess.Popen(
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        ) as process:
+            for line in iter(process.stdout.readline, ""):
                 line = line.strip()
                 if line:
                     log.debug(">> %s", line)
                     yield line
             stderr = ""
-            for line in iter(process.stderr.readline, ''):
+            for line in iter(process.stderr.readline, ""):
                 stderr.join(line)
             if process.returncode != 0:
                 log.debug("Failed to execute: %s", command)
@@ -126,7 +134,7 @@ def pager_command(command: list[str], output) -> None:
                 pager.stdin.write(output.encode())
             elif isinstance(output, list):
                 for line in output:
-                    pager.stdin.write((line + '\n').encode())
+                    pager.stdin.write((line + "\n").encode())
             pager.stdin.close()
             pager.wait()
         except KeyboardInterrupt:  # Allow user to exit less with Ctrl+C
@@ -149,7 +157,7 @@ def split_lines_ignore_empty(text: str) -> list[str]:
     return [line.strip() for line in text.splitlines() if line.strip()]
 
 
-def count_days(start_date_str: str, end_date_str: str="") -> int:
+def count_days(start_date_str: str, end_date_str: str = "") -> int:
     """
     Calculates the number of days between 2 dates
 
