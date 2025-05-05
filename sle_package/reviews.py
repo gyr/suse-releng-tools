@@ -1,16 +1,21 @@
 import argparse
 import sys
+from bs4 import BeautifulSoup
+from rich.console import Console
+from rich.panel import Panel
 from rich.prompt import Prompt
 
 from sle_package.utils.logger import logger_setup
 from sle_package.utils.tools import (
-    run_command,
-    run_command_and_stream_output,
     pager_command,
+    run_command,
+    running_spinner_decorator,
 )
 
 
-log = logger_setup(__name__, verbose=True)
+log = logger_setup(__name__)
+
+console = Console()
 
 
 def valid_staging(staging: str) -> str:
@@ -30,91 +35,44 @@ def valid_staging(staging: str) -> str:
         raise argparse.ArgumentTypeError(msg) from exc
 
 
-def list_requests(api_url: str, project: str, staging: str) -> list[tuple[str, str]]:
+@running_spinner_decorator
+def list_requests(
+    api_url: str, project: str, is_bugowner_request: bool = False
+) -> list[tuple[str, str]]:
     """
     List all source packages from a OBS project
 
     :param api_url: OBS instance
     :param project: OBS project
+    :param is_bugowner_request: list bugowner requests
     :return: list of source packages
     """
-    requests = []
-    command = [
-        "/bin/bash",
-        "-c",
-        f"""
-ex <(osc -A {api_url} review list -P {staging} {project}) << EOF
-# filter lines
-v/^\([0-9]\| *submit:\| *delete:\|.* sle-release-managers\)/d
-# :g/^/: The :global command. /^/ matches every line (beginning of line).
-# if line('.') < line('$')-1: Checks if the current line is at least two lines away from the end of the file. This condition prevents attempting to join lines that don't exist.
-# .,+2join: Joins the current line and the next two lines.
-# endif: Closes the if statement.
-g/^/if line('.') < line('$')-1 | .,+2join | endif
-# delete reviewed requests
-g/Review by Group      is accepted:  sle-release-managers(/d
-# filter request id
-##%s/\s.*//
-%p
-q!
-EOF
-[ $? -ne 0 ] && exit 0
-""",
-    ]
-    for line in run_command_and_stream_output(command):
-        line_fields = line.split()
-        # ['000000', 'State:review(approved)', 'By:foo', 'When:2025-02-14T15:29:41', 'submit:', 'SUSE:SLFO:Main/utempter', '->', 'SUSE:SLFO:Main', 'Review', 'by', 'Group', 'is', 'new:', 'sle-release-managers']
-        request = (
-            line_fields[0],
-            line_fields[5]
-            .rsplit("/", 1)[1]
-            .split("@", 1)[0]
-            .replace(".SUSE_SLFO_Main", ""),
+    command = f"osc -A {api_url} api".split()
+    if is_bugowner_request:
+        command.append(
+            f"/search/request?match=state/@name='review' and action/@type='set_bugowner' and action/target/@project='{project}'&withhistory=0&withfullhistory=0"
         )
-        requests.append(request)
-    return requests
-
-
-def list_bugowner_requests(api_url: str, project: str) -> list[tuple[str, str, str]]:
-    """
-    List all source packages from a OBS project
-
-    :param api_url: OBS instance
-    :param project: OBS project
-    :return: list of source packages
-    """
-    requests = []
-    command = [
-        "/bin/bash",
-        "-c",
-        f"""
-ex <(osc -A {api_url} review list --type set_bugowner {project}) << EOF
-# filter lines
-v/^\([0-9]\| *set_bugowner:\|.* sle-release-managers\)/d
-# :g/^/: The :global command. /^/ matches every line (beginning of line).
-# if line('.') < line('$')-1: Checks if the current line is at least two lines away from the end of the file. This condition prevents attempting to join lines that don't exist.
-# .,+2join: Joins the current line and the next two lines.
-# endif: Closes the if statement.
-g/^/if line('.') < line('$')-1 | .,+2join | endif
-# delete reviewed requests
-g/Review by Group      is accepted:  sle-release-managers(/d
-# filter request id
-##%s/\s.*//
-%p
-q!
-EOF
-[ $? -ne 0 ] && exit 0
-""",
-    ]
-    for line in run_command_and_stream_output(command):
-        line_fields = line.split()
-        # ['000000', 'State:review', 'By:foo', 'When:2025-03-20T18:20:31', 'set_bugowner:', 'java-maintainers', 'SUSE:SLFO:Main/picocli', 'Review', 'by', 'Group', 'is', 'new:', 'sle-release-managers']
-        request = (
-            line_fields[0],
-            line_fields[6].rsplit("/", 1)[1].split("@", 1)[0],
-            line_fields[5],
+    else:
+        command.append(
+            f"/search/request?match=state/@name='review' and review/@state='new' and review/@by_project='{project}'&withhistory=0&withfullhistory=0"
         )
-        requests.append(request)
+    result = run_command(command)
+
+    soup = BeautifulSoup(result.stdout, "lxml")
+
+    requests = []
+
+    for request in soup.find_all("request"):
+        state_tag = request.find("state")
+        if state_tag and state_tag.get("name") == "review":
+            relmgr_review = request.find("review", {"by_group": "sle-release-managers"})
+            if relmgr_review and relmgr_review.get("state") == "new":
+                request_tuple = (
+                    request.get("id"),
+                    request.action.target.get("package"),
+                )
+                log.debug(f"{request_tuple=}")
+                requests.append(request_tuple)
     return requests
 
 
@@ -130,6 +88,7 @@ def show_request(api_url: str, request: str) -> None:
     pager_command(["delta"], output.stdout)
 
 
+@running_spinner_decorator
 def approve_request(api_url: str, request: str, is_bugowner: bool) -> None:
     """
     Approve request
@@ -145,6 +104,20 @@ def approve_request(api_url: str, request: str, is_bugowner: bool) -> None:
         command = f"osc -A {api_url} review accept -m 'OK' -G {group} {request}"
         output = run_command(command.split())
         print(f"{group}: {output.stdout}")
+
+
+def show_request_list(requests: list[tuple[str, str]]) -> None:
+    title = "Request Reviews"
+    lines = []
+    if len(requests) == 0:
+        lines.append("No pending reviews.")
+    else:
+        for id, package in requests:
+            lines.append(f" - SR#{id}: {package}")
+
+    panel_content = "\n".join(lines)
+    panel = Panel(panel_content, title=title)
+    console.print(panel)
 
 
 def build_parser(parent_parser, config) -> None:
@@ -186,19 +159,14 @@ def main(args, config) -> None:
     """
     requests = []
     # Parse arguments
+    project = args.project
     if args.staging:
-        staging = f"{args.project}:Staging:{args.staging}"
-        requests = list_requests(args.osc_instance, args.project, staging)
-    elif args.bugowner:
-        requests = list_bugowner_requests(args.osc_instance, args.project)
+        project = f"{project}:Staging:{args.staging}"
+    requests = list_requests(args.osc_instance, project, args.bugowner)
 
+    show_request_list(requests)
     if len(requests) == 0:
-        print(">>> No pending reviews.")
         sys.exit(0)
-
-    print(">>> Request(s) to be reviewed:")
-    for request in requests:
-        print(*request, sep=" - ")
 
     start_review = Prompt.ask(">>> Start the review?", choices=["y", "n"], default="y")
     if start_review == "n":
@@ -221,4 +189,6 @@ def main(args, config) -> None:
                 approve_request(args.osc_instance, request[0], args.bugowner)
         elif review_request == "a":
             sys.exit(0)
-    print(">>> All reviews done.")
+
+    panel = Panel("All reviews done.")
+    console.print(panel)
