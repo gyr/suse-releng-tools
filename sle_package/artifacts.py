@@ -1,5 +1,6 @@
 import re
 from argparse import Namespace
+from rich.progress import Progress, TaskID
 from typing import Any  # If LuaTable import fails, you might temporarily use Any
 
 try:
@@ -9,12 +10,17 @@ except ImportError:
 
 
 from sle_package.utils.logger import logger_setup
-from sle_package.utils.tools import run_command, run_command_and_stream_output
+from sle_package.utils.tools import (
+    run_command,
+    run_command_and_stream_output,
+    running_spinner_decorator,
+)
 
 
 log = logger_setup(__name__)
 
 
+@running_spinner_decorator
 def list_packages(api_url: str, project: str) -> list[str]:
     """
     List all source packages from a OBS project
@@ -29,7 +35,12 @@ def list_packages(api_url: str, project: str) -> list[str]:
 
 
 def list_artifacs(
-    api_url: str, project: str, packages: list[str], repo_info: Any
+    api_url: str,
+    project: str,
+    packages: list[str],
+    repo_info: Any,
+    progress: Progress,
+    task_id: TaskID,
 ) -> None:
     """
     List all artifacts filtered by pattern in the specified repoistory
@@ -62,6 +73,7 @@ def list_artifacs(
                 if not line.startswith(tuple(invalid_start)):
                     if not line.endswith(invalid_extensions):
                         print(line)
+        progress.update(task_id, advance=1)
 
 
 def build_parser(parent_parser, config) -> None:
@@ -102,11 +114,16 @@ def main(args: Namespace, config: LuaTable) -> None:
             "packages": packages,
         }
     )
-    for index in config.artifacts.repositories:
-        repo_info = config.artifacts.get_repo_info(config, index)
-        parameters.update(
-            {
-                "repo_info": repo_info,
-            }
-        )
-        list_artifacs(**parameters)
+    total_steps = len(config.artifacts.repositories) * len(packages)
+    with Progress() as progress:
+        task_id = progress.add_task("Searching artifacts", total=total_steps)
+        for index in config.artifacts.repositories:
+            repo_info = config.artifacts.get_repo_info(config, index)
+            parameters.update(
+                {
+                    "repo_info": repo_info,
+                    "progress": progress,
+                    "task_id": task_id,
+                }
+            )
+            list_artifacs(**parameters)
