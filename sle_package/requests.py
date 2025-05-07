@@ -131,6 +131,7 @@ def main(args, config) -> None:
     :param args: Argparse Namespace that has all the arguments
     :param config: Lua config table
     """
+    time_period = ""
     if args.days:
         time_period = f"-D {args.days}"
     elif args.date:

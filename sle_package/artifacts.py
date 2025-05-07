@@ -91,9 +91,9 @@ def build_parser(parent_parser, config) -> None:
         "--project",
         "-p",
         dest="project",
-        help=f"OBS/IBS project (DEFAULT = {config.artifacts.default_product}).",
+        help=f"OBS/IBS project (DEFAULT = {config.common.default_product}).",
         type=str,
-        default=config.artifacts.default_product,
+        default=config.common.default_product,
     )
     subparser.set_defaults(func=main)
 
