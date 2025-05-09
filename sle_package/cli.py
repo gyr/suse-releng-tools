@@ -9,7 +9,7 @@ import argcomplete
 from dotenv import load_dotenv
 from lupa import LuaRuntime  # type: ignore
 
-from sle_package.utils.logger import logger_setup
+from sle_package.utils.logger import logger_setup, global_logger_config
 
 # Get the directory of config.lua
 load_dotenv()
@@ -40,6 +40,7 @@ SUBPARSERS = PARSER.add_subparsers(
     help="Help for the subprograms that this tool offers."
 )
 
+global_logger_config(verbose=config.common.debug)
 log = logger_setup(__name__)
 
 

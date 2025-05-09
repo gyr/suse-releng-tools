@@ -8,7 +8,6 @@ from typing import Any, Generator
 from sle_package.utils.logger import logger_setup
 
 
-# log = logger_setup(__name__, True)
 log = logger_setup(__name__)
 
 

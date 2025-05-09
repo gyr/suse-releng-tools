@@ -1,5 +1,6 @@
 local config = {
     common = {
+        debug = false,
         api_url = "https://api.suse.de/",
         default_project = "SUSE:SLFO:Main",
         default_product = "SUSE:SLFO:Products:SLES:16.0",

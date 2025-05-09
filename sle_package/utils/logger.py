@@ -1,10 +1,37 @@
 import logging
 
 
-def logger_setup(name: str,
-                 verbose: bool = False,
-                 log_file: bool = False) -> logging.Logger:
+def logger_setup(name: str, verbose: bool = False) -> logging.Logger:
+    """
+    Retrieves a logger with the specified name.  This function
+    ensures that the basic configuration is done.
+
+    :param name: module name
+    :param verbose: set local debug log level
+    :return: log
+    """
+    # Use the name directly, don't re-create a new logger.
     logger = logging.getLogger(name)
+
+    # Check if the logger has already been configured.
+    if not logger.hasHandlers():
+        if verbose:
+            logger.setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.WARNING)
+
+    return logger
+
+
+def global_logger_config(verbose: bool = False, log_file: bool = False) -> None:
+    """
+    Set logging level and log to file for the root logger.
+    This affacts all loggers.
+
+    :param verbose: enable debug mode.
+    :param log_file: log to file.
+    """
+    logger = logging.getLogger()
 
     if verbose:
         logger.setLevel(logging.DEBUG)
@@ -29,5 +56,3 @@ def logger_setup(name: str,
         # file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
-
-    return logger
