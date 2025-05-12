@@ -165,16 +165,17 @@ def main(args, config) -> None:
     requests = list_requests(args.osc_instance, project, args.bugowner)
 
     show_request_list(requests)
-    if len(requests) == 0:
+    total_requests = len(requests)
+    if total_requests == 0:
         sys.exit(0)
 
-    start_review = Prompt.ask(">>> Start the review?", choices=["y", "n"], default="y")
+    start_review = Prompt.ask(f">>> Start the reviews ({total_requests})?", choices=["y", "n"], default="y")
     if start_review == "n":
         sys.exit(0)
 
-    for request in requests:
+    for index, request in enumerate(requests, start=1):
         review_request = Prompt.ask(
-            f">>> Review {request[0]} - {request[1]}?",
+            f">>> [{index}/{total_requests}] Review {request[0]} - {request[1]}?",
             choices=["y", "n", "a"],
             default="y",
         )
