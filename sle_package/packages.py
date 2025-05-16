@@ -4,6 +4,7 @@ from rich.console import Console
 from rich.table import Table
 from subprocess import CalledProcessError
 
+from sle_package.users import get_groups, get_users
 from sle_package.utils.logger import logger_setup
 from sle_package.utils.tools import (
     run_command,
@@ -82,15 +83,13 @@ def get_bugowner(api_url: str, package: str) -> tuple[list, bool]:
         soup = BeautifulSoup(output.stdout, "lxml")
         people = soup.find_all("person")
         if len(people) != 0:
-            for person in people:
-                bugowners.append(person.get("name"))
+            bugowners = [person.get("name") for person in people]
             return bugowners, is_group
 
         groups = soup.find_all("group")
         if len(groups) != 0:
             is_group = True
-            for group in groups:
-                bugowners.append(group.get("name"))
+            bugowners = [group.get("name") for group in groups]
             return bugowners, is_group
 
         log.debug("No bugowner found for %s.", package)
@@ -99,7 +98,6 @@ def get_bugowner(api_url: str, package: str) -> tuple[list, bool]:
         raise RuntimeError(f"{package} has no bugowner") from e
 
 
-@running_spinner_decorator
 def get_bugowner_info(api_url: str, user: str, is_group: bool) -> dict:
     """
     Given a source package return the OBS user of the bugowner"
@@ -111,32 +109,8 @@ def get_bugowner_info(api_url: str, user: str, is_group: bool) -> dict:
     """
     try:
         if is_group:
-            command = f"osc -A {api_url} api /group/{user}"
-        else:
-            command = f'osc -A {api_url} api /search/person?match=@login="{user}"'
-        output = run_command(command.split())
-        soup = BeautifulSoup(output.stdout, "lxml")
-        info = {}
-        if is_group:
-            title = soup.find("title")
-            info["Group"] = title.text if title else None
-
-            email = soup.find("email")
-            info["Email"] = email.text if email else None
-
-            maintainers = soup.find_all("maintainer")
-            info["Maintainers"] = [tag["userid"] for tag in maintainers]
-        else:
-            person = soup.find("person")
-            if len(person) == 0:
-                raise RuntimeError(f"{user} not found.")
-            info = {
-                "User": person.find("login").text,
-                "Email": person.find("email").text,
-                "Name": person.find("realname").text,
-                "State": person.find("state").text,
-            }
-        return info
+            return get_groups(api_url, user)
+        return next(get_users(api_url, user))
     except CalledProcessError as e:
         raise RuntimeError(f"{user} not found.") from e
 

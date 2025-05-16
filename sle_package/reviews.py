@@ -112,8 +112,7 @@ def show_request_list(requests: list[tuple[str, str]]) -> None:
     if len(requests) == 0:
         lines.append("No pending reviews.")
     else:
-        for id, package in requests:
-            lines.append(f" - SR#{id}: {package}")
+        lines = [f"- SR#{id}: {package}" for id, package in requests]
 
     panel_content = "\n".join(lines)
     panel = Panel(panel_content, title=title)
@@ -169,7 +168,9 @@ def main(args, config) -> None:
     if total_requests == 0:
         sys.exit(0)
 
-    start_review = Prompt.ask(f">>> Start the reviews ({total_requests})?", choices=["y", "n"], default="y")
+    start_review = Prompt.ask(
+        f">>> Start the reviews ({total_requests})?", choices=["y", "n"], default="y"
+    )
     if start_review == "n":
         sys.exit(0)
 
