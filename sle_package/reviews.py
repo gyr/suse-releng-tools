@@ -15,8 +15,6 @@ from sle_package.utils.tools import (
 
 log = logger_setup(__name__)
 
-console = Console()
-
 
 def valid_staging(staging: str) -> str:
     """
@@ -33,6 +31,13 @@ def valid_staging(staging: str) -> str:
     except ValueError as exc:
         msg = f"Not a valid staging: '{staging}'. Must a single letter."
         raise argparse.ArgumentTypeError(msg) from exc
+
+
+def print_panel(lines: list[str], title: str="") -> None:
+    console = Console()
+    panel_content = "\n".join(lines)
+    panel = Panel(panel_content, title=title)
+    console.print(panel)
 
 
 @running_spinner_decorator
@@ -89,7 +94,7 @@ def show_request(api_url: str, request: str) -> None:
 
 
 @running_spinner_decorator
-def approve_request(api_url: str, request: str, is_bugowner: bool) -> None:
+def approve_request(api_url: str, request: str, is_bugowner: bool) -> list[str]:
     """
     Approve request
 
@@ -98,25 +103,24 @@ def approve_request(api_url: str, request: str, is_bugowner: bool) -> None:
     :param bugowner: is a bugowner request
     """
     groups: list = ["sle-release-managers"]
+    lines = []
     if is_bugowner:
         groups.append("sle-staging-managers")
     for group in groups:
         command = f"osc -A {api_url} review accept -m 'OK' -G {group} {request}"
         output = run_command(command.split())
-        print(f"{group}: {output.stdout}")
+        lines.append(f"{group}: {output.stdout}")
+    return lines
 
 
-def show_request_list(requests: list[tuple[str, str]]) -> None:
+def show_request_list(requests: list[tuple[str, str]]) -> list[str]:
     title = "Request Reviews"
     lines = []
     if len(requests) == 0:
         lines.append("No pending reviews.")
     else:
         lines = [f"- SR#{id}: {package}" for id, package in requests]
-
-    panel_content = "\n".join(lines)
-    panel = Panel(panel_content, title=title)
-    console.print(panel)
+    return lines
 
 
 def build_parser(parent_parser, config) -> None:
@@ -163,7 +167,7 @@ def main(args, config) -> None:
         project = f"{project}:Staging:{args.staging}"
     requests = list_requests(args.osc_instance, project, args.bugowner)
 
-    show_request_list(requests)
+    print_panel(show_request_list(requests), "Request Reviews")
     total_requests = len(requests)
     if total_requests == 0:
         sys.exit(0)
@@ -188,9 +192,8 @@ def main(args, config) -> None:
                 default="y",
             )
             if request_approval == "y":
-                approve_request(args.osc_instance, request[0], args.bugowner)
+                print_panel(approve_request(args.osc_instance, request[0], args.bugowner))
         elif review_request == "a":
             sys.exit(0)
 
-    panel = Panel("All reviews done.")
-    console.print(panel)
+    print_panel(["All reviews done."])
