@@ -7,7 +7,7 @@ local config = {
     },
     artifacts = {
         repositories = { "images", "product" },
-        images_pattern = "\\b(kiwi-templates-Minimal)\\b",
+        images_pattern = "\\b(kiwi-templates-Minimal|SL-Micro)\\b",
         products_pattern = "\\b(000productcompose:)\\b",
         invalid_extensions = {
             ".json",
