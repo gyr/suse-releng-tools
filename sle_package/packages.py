@@ -75,7 +75,8 @@ def get_bugowner(api_url: str, package: str) -> tuple[list, bool]:
     :param package: binary name
     :return: source package
     """
-    command = f"osc -A {api_url} api /search/owner?package={package}&filter=bugowner"
+    fixed_package = package.replace("++", "%2B%2B")
+    command = f"osc -A {api_url} api /search/owner?package={fixed_package}&filter=bugowner"
     bugowners = []
     is_group = False
     try:
