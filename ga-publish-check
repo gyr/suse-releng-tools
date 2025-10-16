@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 TIMER=600
-APIURL='https://api.suse.de/'
+source /home/gyr/.gyr.d/suse.d/bin/.env
 REPOSITORY=images
 
 function usage() {
@@ -11,7 +11,7 @@ function usage() {
 while getopts "a:p:r:t:" opt; do
     case $opt in
         a)
-            APIURL=${OPTARG}
+            API_URL=${OPTARG}
             ;;
         p)
             PROJECT=${OPTARG}
@@ -34,9 +34,9 @@ if [ -z "${PROJECT}" ] ; then
     exit 1
 fi
 
-while (osc -A ${APIURL} api "/build/${PROJECT}/_result?view=summary&repository=${REPOSITORY}" | grep "result project" | grep -v 'code="published" state="published">'); do
+while (osc -A ${API_URL} api "/build/${PROJECT}/_result?view=summary&repository=${REPOSITORY}" | grep "result project" | grep -v 'code="published" state="published">'); do
     echo PENDING
     sleep ${TIMER}
 done
 
-osc -A ${APIURL} api "/build/${PROJECT}/_result?view=summary&repository=${REPOSITORY}" | grep "result project" | grep 'code="published" state="published">' && echo PUBLISHED
+osc -A ${API_URL} api "/build/${PROJECT}/_result?view=summary&repository=${REPOSITORY}" | grep "result project" | grep 'code="published" state="published">' && echo PUBLISHED

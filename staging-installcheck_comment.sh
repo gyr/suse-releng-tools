@@ -2,7 +2,7 @@
 
 PROJECT=${1:-SUSE:SLE-15-SP3:GA}
 COMMENT=${2:-"installcheck: ignore rpm-ndb"}
-APIURL='https://api.suse.de/'
+source /home/gyr/.gyr.d/suse.d/bin/.env
 
 function usage() {
     printf "Usage: %s [-a api_url] -p project -c comment\n" $(basename $0)
@@ -11,7 +11,7 @@ function usage() {
 while getopts "a:p:c:" opt; do
     case $opt in
         a)
-            APIURL=${OPTARG}
+            API_URL=${OPTARG}
             ;;
         p)
             PROJECT=${OPTARG}
@@ -36,8 +36,8 @@ if [ -z "${COMMENT}" ] ; then
     exit 1
 fi
 
-for staging in $(osc -A ${APIURL} ls  | grep  "^${PROJECT}:Staging:") ; do
-    osc -A ${APIURL} api "/comments/project/$staging" | grep -q "$COMMENT" || osc -A ${APIURL} api -X POST -d "$COMMENT" "/comments/project/$staging"
+for staging in $(osc -A ${API_URL} ls  | grep  "^${PROJECT}:Staging:") ; do
+    osc -A ${API_URL} api "/comments/project/$staging" | grep -q "$COMMENT" || osc -A ${API_URL} api -X POST -d "$COMMENT" "/comments/project/$staging"
 done
 
-# osc -A ${APIURL} comment create -c "installcheck: ignore rpm-ndb" project SUSE:SLE-15-SP3:GA:Staging:A
+# osc -A ${API_URL} comment create -c "installcheck: ignore rpm-ndb" project SUSE:SLE-15-SP3:GA:Staging:A

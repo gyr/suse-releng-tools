@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-APIURL='https://api.suse.de/'
+source /home/gyr/.gyr.d/suse.d/bin/.env
 
 function usage() {
     printf "Usage: %s [-a api_url] -p project -s staging\n" $(basename $0)
@@ -9,7 +9,7 @@ function usage() {
 while getopts "a:p:s:" opt; do
     case $opt in
         a)
-            APIURL=${OPTARG}
+            API_URL=${OPTARG}
             ;;
         p)
             STAGING_PROJECT=${OPTARG}:Staging
@@ -37,15 +37,15 @@ fi
 WIPE_PACKAGES="kernel-64kb kernel-debug kernel-default kernel-default-base kernel-docs kernel-kvmsmall kernel-livepatch-SLE15-SP6_Update_0 kernel-livepatch-SLE15-SP6-RT_Update_0 kernel-obs-build kernel-obs-qa kernel-source kernel-syms kernel-zfcpdump kernel-azure kernel-source-azure kernel-syms-azure kernel-rt kernel-rt_debug kernel-source-rt kernel-syms-rt"
 for WIPE_PACKAGE in ${WIPE_PACKAGES} ;  do
     echo "[INFO] WIPE BINARIES: ${WIPE_PACKAGE}"
-    osc -A ${APIURL} wipebinaries --all ${STAGING_PROJECT}:${STAGING} ${WIPE_PACKAGE}
+    osc -A ${API_URL} wipebinaries --all ${STAGING_PROJECT}:${STAGING} ${WIPE_PACKAGE}
 done
 #for i in $(echo "A B C D E F G H S V Y") ; do iosc wipebinaries --all SUSE:SLE-15-SP3:GA:Staging:$i patterns-base ; done
 
 PACKAGES="kernel-64kb kernel-azure kernel-debug kernel-default kernel-default-base kernel-docs kernel-kvmsmall kernel-livepatch-SLE15-SP6_Update_0 kernel-livepatch-SLE15-SP6-RT_Update_0 kernel-obs-build kernel-obs-qa kernel-source kernel-source-azure kernel-syms kernel-syms-azure kernel-zfcpdump kernel-rt kernel-rt_debug kernel-source-rt kernel-syms-rt 000product 000release-packages"
 for PACKAGE in ${PACKAGES}; do
     echo "[INFO] REBUILD: ${PACKAGE}"
-    osc -A ${APIURL} rebuildpac ${STAGING_PROJECT}:${STAGING} ${PACKAGE}
+    osc -A ${API_URL} rebuildpac ${STAGING_PROJECT}:${STAGING} ${PACKAGE}
 done
 
 echo ">>> images repo"
-osc -A ${APIURL} rebuildpac ${STAGING_PROJECT}:${STAGING} -r images
+osc -A ${API_URL} rebuildpac ${STAGING_PROJECT}:${STAGING} -r images

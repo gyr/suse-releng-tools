@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-APIURL='https://api.suse.de/'
+source /home/gyr/.gyr.d/suse.d/bin/.env
 
 usage() {
     printf "Usage: %s [-a api_url] [-d days] [-f from_date] -p project\n" $(basename $0)
@@ -16,7 +16,7 @@ days_from () {
 while getopts "a:p:d:f:" opt; do
     case $opt in
         a)
-            APIURL=${OPTARG}
+            API_URL=${OPTARG}
             ;;
         p)
             PROJECT=${OPTARG}
@@ -40,7 +40,7 @@ if [ -z "${PROJECT}" ] ; then
 fi
 
 
-ex <(osc -A ${APIURL} request list -t submit ${DAYS} -s accepted ${PROJECT}) << EOF
+ex <(osc -A ${API_URL} request list -t submit ${DAYS} -s accepted ${PROJECT}) << EOF
 # cleanup input
 v/^[[:digit:]]\|submit:/d
 # join lines 2 by 2
@@ -58,7 +58,7 @@ SUBMIT REQUESTS
 q!
 EOF
 
-ex <(osc -A ${APIURL} request list -t delete ${DAYS} -s accepted ${PROJECT}) << EOF
+ex <(osc -A ${API_URL} request list -t delete ${DAYS} -s accepted ${PROJECT}) << EOF
 # cleanup input
 v/^[[:digit:]]\|delete:/d
 # join lines 2 by 2

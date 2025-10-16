@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-APIURL='https://api.suse.de/'
+source /home/gyr/.gyr.d/suse.d/bin/.env
 
 function usage() {
     printf "Usage: %s [-A api_url] project/package/repository/arch\n" $(basename $0)
@@ -9,7 +9,7 @@ function usage() {
 while getopts "a:p:s:" opt; do
     case $opt in
         A)
-            APIURL=${OPTARG}
+            API_URL=${OPTARG}
             ;;
         ?)
             usage
@@ -39,6 +39,6 @@ if [ -z "${PROJECT}" ] ; then
     exit 1
 fi
 
-osc -A ${APIURL} abortbuild ${PROJECT} ${PACKAGE} -r ${REPOSITORY} -a ${ARCH}
+osc -A ${API_URL} abortbuild ${PROJECT} ${PACKAGE} -r ${REPOSITORY} -a ${ARCH}
 sleep 30
-osc -A ${APIURL} rebuild ${PROJECT} ${PACKAGE} -r ${REPOSITORY} -a ${ARCH}
+osc -A ${API_URL} rebuild ${PROJECT} ${PACKAGE} -r ${REPOSITORY} -a ${ARCH}

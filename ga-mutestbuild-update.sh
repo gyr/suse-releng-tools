@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-APIURL='https://api.suse.de/'
+source /home/gyr/.gyr.d/suse.d/bin/.env
 
 function usage() {
     printf "Usage: %s [-a api_url] -p project\n" $(basename $0)
@@ -9,7 +9,7 @@ function usage() {
 while getopts "a:p:t:" opt; do
     case $opt in
         a)
-            APIURL=${OPTARG}
+            API_URL=${OPTARG}
             ;;
         p)
             PROJECT=$OPTARG
@@ -37,7 +37,7 @@ GA_PROJCONF=${LOCAL_DIR}/ga.proj
 
 ga-packages-list-all.py -p ${PROJECT} > ${LIST_GA_PACKAGES}
 # delta 15SP5pkg-2022-10-28T20:07:07-03:00 ${LIST_GA_PACKAGES}
-osc -A ${APIURL} meta prjconf ${PROJECT} > ${GA_PROJCONF}
+osc -A ${API_URL} meta prjconf ${PROJECT} > ${GA_PROJCONF}
 cat ${LIST_GA_PACKAGES} >> ${GA_PROJCONF}
-osc -A ${APIURL} meta prjconf ${BUILD_PROJECT} -F ${GA_PROJCONF}
-#osc -A ${APIURL} rebuildpac ${BUILD_PROJECT} -f
+osc -A ${API_URL} meta prjconf ${BUILD_PROJECT} -F ${GA_PROJCONF}
+#osc -A ${API_URL} rebuildpac ${BUILD_PROJECT} -f

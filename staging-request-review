@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-APIURL='https://api.suse.de/'
+source /home/gyr/.gyr.d/suse.d/bin/.env
 
 usage() {
     printf "Usage: %s [-a api_url] -p project -s staging\n" $(basename $0)
@@ -9,7 +9,7 @@ usage() {
 while getopts "a:p:s:" opt; do
     case $opt in
         a)
-            APIURL=${OPTARG}
+            API_URL=${OPTARG}
             ;;
         p)
             PROJECT=${OPTARG}
@@ -47,7 +47,7 @@ g/Review by Group      is accepted:  sle-release-managers(/d
 q!
 "
 
-REQUESTS=$(ex <(osc -A ${APIURL} review list -P ${STAGING_PROJECT} ${PROJECT}) <<< ${EX_CMD})
+REQUESTS=$(ex <(osc -A ${API_URL} review list -P ${STAGING_PROJECT} ${PROJECT}) <<< ${EX_CMD})
 
 if [ -z "${REQUESTS}" ]; then
     printf "No request waiting for review.\n"
@@ -69,10 +69,10 @@ for i in ${REQUESTS}; do
     if [[ "${REPLY}" =~ [Nn] ]]; then
         continue
     else
-        osc -A ${APIURL} review show -d $i | delta
+        osc -A ${API_URL} review show -d $i | delta
         read -p "Do you want to approve it? [y/N] "
         if [[ "${REPLY}" =~ [Yy] ]]; then
-            osc -A ${APIURL} review accept -m "OK" -G sle-release-managers $i
+            osc -A ${API_URL} review accept -m "OK" -G sle-release-managers $i
         fi
     fi
 done

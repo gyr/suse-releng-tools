@@ -1,6 +1,6 @@
 #!/bin/sh
 
-APIURL='https://api.suse.de/'
+source /home/gyr/.gyr.d/suse.d/bin/.env
 
 usage() {
     printf "Usage: %s [-a api_url] -p project\n" $(basename $0)
@@ -9,7 +9,7 @@ usage() {
 while getopts "a:p:" opt; do
     case $opt in
         a)
-            APIURL=${OPTARG}
+            API_URL=${OPTARG}
             ;;
         p)
             PROJECT=${OPTARG}
@@ -40,14 +40,14 @@ q!
 "
 
 list_images() {
-    for i in $(osc -A ${APIURL} ls ${PROJECT} | \grep -E "^(kiwi-templates-Minimal|agama-installer-SLES):"); do
-        ex <(osc -A ${APIURL} ls ${PROJECT} $i -b -r images) <<< ${EX_CMD}
+    for i in $(osc -A ${API_URL} ls ${PROJECT} | \grep -E "^(kiwi-templates-Minimal|agama-installer-SLES):"); do
+        ex <(osc -A ${API_URL} ls ${PROJECT} $i -b -r images) <<< ${EX_CMD}
     done
 }
 
 list_repos() {
-    for i in $(osc -A ${APIURL} ls ${PROJECT} | \grep -E "^000productcompose:"); do
-        ex <(osc -A ${APIURL} ls ${PROJECT} $i -b -r product) <<< ${EX_CMD}
+    for i in $(osc -A ${API_URL} ls ${PROJECT} | \grep -E "^000productcompose:"); do
+        ex <(osc -A ${API_URL} ls ${PROJECT} $i -b -r product) <<< ${EX_CMD}
     done
 }
 

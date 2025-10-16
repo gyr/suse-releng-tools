@@ -1,6 +1,6 @@
 #!/bin/sh
 
-APIURL='https://api.suse.de/'
+source /home/gyr/.gyr.d/suse.d/bin/.env
 
 function usage() {
     printf "Usage: %s [-a api_url] -p project\n" $(basename $0)
@@ -9,7 +9,7 @@ function usage() {
 while getopts "a:p:" opt; do
     case $opt in
         a)
-            APIURL=${OPTARG}
+            API_URL=${OPTARG}
             ;;
         p)
             PROJECT=${OPTARG}
@@ -29,7 +29,7 @@ fi
 sle_15_media_build() {
     local project=$1
     echo "builds from ${project}:"
-    for i in $(osc -A ${APIURL} api "/build/${project}/_result?package=000product&multibuild=1&repository=images&arch=local&view=binarylist"  | grep "binary filename" | grep "DVD\|cd-cd\|Packages\|Full\|Online" | grep "Media1.iso\"" | sed -e 's/\(.*\)filename="\(.*.iso\).*/\2/g' | grep x86_64) ; do
+    for i in $(osc -A ${API_URL} api "/build/${project}/_result?package=000product&multibuild=1&repository=images&arch=local&view=binarylist"  | grep "binary filename" | grep "DVD\|cd-cd\|Packages\|Full\|Online" | grep "Media1.iso\"" | sed -e 's/\(.*\)filename="\(.*.iso\).*/\2/g' | grep x86_64) ; do
         echo $i | sed -e 's/-x86_64-/:\t\t/g;s/-Media.*iso//;s/-Packages-x86_64-/-Packages:\t\t/g' | sed -e 's/^[[:space:]]*//'
     done
 }
@@ -40,25 +40,25 @@ sle_images() {
 
     TEMP_FILE="$(mktemp)"
 
-    KIWI_TEMPLATE=$(osc -A ${APIURL} ls  ${project} | grep kiwi-templates );
+    KIWI_TEMPLATE=$(osc -A ${API_URL} ls  ${project} | grep kiwi-templates );
     if [ "$KIWI_TEMPLATE" != "" ]; then
         # multibuild JeOS
-        for i in $(osc -A ${APIURL} cat  ${project} $KIWI_TEMPLATE _multibuild | grep flavor | sed -e 's,.*<flavor>,,g;s,</.*,,g') ; do
-            osc -A ${APIURL} ls -b  ${project} $KIWI_TEMPLATE:$i images | grep '.packages$' | sed -e 's/\.packages//' | sed -e 's/^[[:space:]]*//' >> $TEMP_FILE &
+        for i in $(osc -A ${API_URL} cat  ${project} $KIWI_TEMPLATE _multibuild | grep flavor | sed -e 's,.*<flavor>,,g;s,</.*,,g') ; do
+            osc -A ${API_URL} ls -b  ${project} $KIWI_TEMPLATE:$i images | grep '.packages$' | sed -e 's/\.packages//' | sed -e 's/^[[:space:]]*//' >> $TEMP_FILE &
         done
     fi
 
     # Multibuild images such as cloud etc, typical name is SLE12-SP5-EC2
     # This is for 15.2+ and 12.5+
-    for package in $(osc -A ${APIURL} ls "${project}" | grep "^SLE" | grep -v release); do
-        for flavor in $(osc -A ${APIURL} cat ${project}/$package/_multibuild | grep flavor); do
-            osc -A ${APIURL} ls -b ${project} $package:$(echo $flavor | sed -E "s/<(\/)?flavor>//g")/images | grep packages | sed "s/.packages//" | sed -e 's/^[[:space:]]*//' >> $TEMP_FILE &
+    for package in $(osc -A ${API_URL} ls "${project}" | grep "^SLE" | grep -v release); do
+        for flavor in $(osc -A ${API_URL} cat ${project}/$package/_multibuild | grep flavor); do
+            osc -A ${API_URL} ls -b ${project} $package:$(echo $flavor | sed -E "s/<(\/)?flavor>//g")/images | grep packages | sed "s/.packages//" | sed -e 's/^[[:space:]]*//' >> $TEMP_FILE &
         done 2> /dev/null
     done
 
     # old style
-    for i in $(osc -A ${APIURL} ls ${project} | grep -v _product | grep -v 000product | grep -v kiwi ); do
-        osc -A ${APIURL} ls -b  ${project} $i images | grep '.packages$' | sed -e 's/\.packages//' | sed -e 's/^[[:space:]]*//'  >> $TEMP_FILE &
+    for i in $(osc -A ${API_URL} ls ${project} | grep -v _product | grep -v 000product | grep -v kiwi ); do
+        osc -A ${API_URL} ls -b  ${project} $i images | grep '.packages$' | sed -e 's/\.packages//' | sed -e 's/^[[:space:]]*//'  >> $TEMP_FILE &
     done
     wait
     sort $TEMP_FILE
@@ -78,8 +78,8 @@ if [[ "${PROJECT}" =~ 'SLE-15' ]]; then
     sle_images ${PROJECT}:PUBLISH
 else
     echo "builds from ${PROJECT}:"
-    for i in  $(osc -A ${APIURL} ls ${PROJECT} | grep _product | grep 'DVD-x86\|cd-cd.*x86_64' ) ; do
-        osc -A ${APIURL} ls -b ${PROJECT} $i images local | grep 'Media1.iso$\|Media.iso$' | sed -e 's/-DVD-.*x86_64-/:\t\t/g;s/-Media.*iso//' | sed -e 's/^[[:space:]]*//' &
+    for i in  $(osc -A ${API_URL} ls ${PROJECT} | grep _product | grep 'DVD-x86\|cd-cd.*x86_64' ) ; do
+        osc -A ${API_URL} ls -b ${PROJECT} $i images local | grep 'Media1.iso$\|Media.iso$' | sed -e 's/-DVD-.*x86_64-/:\t\t/g;s/-Media.*iso//' | sed -e 's/^[[:space:]]*//' &
     done
     sle_images ${PROJECT}:TEST
 fi
@@ -89,4 +89,4 @@ fi
 # avoid displaying images-test/$arch
 #echo
 #echo "WSL image (from SUSE:SLE-$VERSION:Update:WSL:Update:CR):"
-#osc -A ${APIURL} ls -b SUSE:SLE-$VERSION:Update:WSL:Update:CR/wsl-appx/standard | grep "\.appx$" | sed -e 's/^[[:space:]]*//'
+#osc -A ${API_URL} ls -b SUSE:SLE-$VERSION:Update:WSL:Update:CR/wsl-appx/standard | grep "\.appx$" | sed -e 's/^[[:space:]]*//'

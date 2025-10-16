@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-APIURL='https://api.suse.de/'
+source /home/gyr/.gyr.d/suse.d/bin/.env
 REPOSITORY=images
 
 function usage() {
@@ -10,7 +10,7 @@ function usage() {
 while getopts "a:" opt; do
     case $opt in
         a)
-            APIURL=${OPTARG}
+            API_URL=${OPTARG}
             ;;
         ?)
             usage
@@ -20,7 +20,7 @@ while getopts "a:" opt; do
 done
 
 FILE=~/work/$1
-osc -A ${APIURL} ls -b SUSE:Maintenance:$1/patchinfo > ${FILE}
+osc -A ${API_URL} ls -b SUSE:Maintenance:$1/patchinfo > ${FILE}
 if hash lnav ; then
     LOG_VIEWER=lnav
 else
